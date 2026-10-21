@@ -105,6 +105,16 @@ button{font:inherit;color:inherit}
 .bar-track{height:22px;border:2px solid var(--navy);border-radius:var(--pill);background:#fff;overflow:hidden}
 .bar-fill{height:100%;border-right:2px solid var(--navy);border-radius:var(--pill)}
 .bar-val{font-family:"Archivo Black",sans-serif;font-size:15px;text-align:right}
+.chart{width:100%;height:auto;display:block;overflow:visible}
+.chart text{font-family:"Noto Sans TC",sans-serif}
+.chart .vl{font-family:"Archivo Black",sans-serif}
+.legend-row{display:flex;flex-wrap:wrap;gap:8px 18px;margin:4px 0 6px;font-size:13px;font-weight:700}
+.legend-row span{display:inline-flex;align-items:center;gap:6px}
+.legend-row i{display:inline-block;width:22px;height:4px;border-radius:2px}
+.chg{font-family:"Archivo Black",sans-serif;font-size:13px}
+.chg.up{color:#1F7A4D}.chg.down{color:var(--orange)}
+.ycard-chg{font-size:12px;font-weight:900;margin-top:2px}
+.spark{display:block}
 .axis-note{font-size:12px;font-weight:700;color:var(--muted);margin-top:10px}
 
 /* 題項 */
@@ -350,12 +360,11 @@ const DIMS = [
 ];
 const RANKS = ["UGY","PGY1","PGY2","Resident"];
 const YEAR_COLORS = ["#FF5A1F","#0B1A3A","#8A94B0","#FFB38A","#3D5A99","#C9CEDB"];
-const LOW_N = 3;   // 回覆數低於此值標示「樣本少」
 const CUR_ROC = new Date().getFullYear() - 1911;
 
 /* ===================== 狀態 ===================== */
 let ITEMS = [], TEACHERS = [], RESPONSES = [];
-const state = { year:"all", rank:"all", q:"", sortKey:"avg", sortDir:-1, adminYear:"all" };
+const state = { year:"all", rank:"all", q:"", sortKey:"avg", sortDir:-1, adminYear:"all", cmp:"eval" };
 let token = null;
 try{ token = sessionStorage.getItem("tes_token"); }catch(e){}
 
@@ -456,36 +465,84 @@ function render(){
   bindTable();
 }
 
+/* 折線圖 */
+function lineSVG(xs, series, h=240){
+  const narrow = window.innerWidth<600;
+  const W=narrow?360:960, H=narrow?Math.round(h*.85):h, L=narrow?36:56, R=narrow?30:48, T=30, B=34;
+  const vals=series.flatMap(s=>s.vals).filter(v=>!isNaN(v));
+  if(!vals.length) return "";
+  const yMin=Math.max(0,Math.min(8,Math.floor(Math.min(...vals)-0.5))), yMax=10;
+  const step=(yMax-yMin)>4?2:1;
+  const pad=narrow?26:48;
+  const x=i=> xs.length===1 ? (L+(W-R))/2 : L+pad+i*(W-L-R-2*pad)/(xs.length-1);
+  const y=v=> T+(yMax-v)*(H-T-B)/(yMax-yMin);
+  let g="";
+  for(let v=yMin; v<=yMax; v+=step){
+    g+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="#0B1A3A" stroke-opacity="${v===yMin?1:.15}" stroke-width="${v===yMin?2:1}"/>`+
+       `<text x="${L-10}" y="${y(v)+4}" text-anchor="end" font-size="12" font-weight="700" fill="#5A6480">${v}</text>`;
+  }
+  xs.forEach((lb,i)=>{ g+=`<text x="${x(i)}" y="${H-10}" text-anchor="middle" font-size="13" font-weight="900" fill="#0B1A3A">${esc(lb)}</text>`; });
+  series.forEach(s=>{
+    let d="", pen=false;
+    s.vals.forEach((v,i)=>{ if(isNaN(v)){pen=false;return;} d+=(pen?"L":"M")+x(i)+" "+y(v)+" "; pen=true; });
+    g+=`<path d="${d}" fill="none" stroke="${s.color}" stroke-width="${s.w||3}" ${s.dash?`stroke-dasharray="${s.dash}"`:""} stroke-linejoin="round" stroke-linecap="round"/>`;
+    s.vals.forEach((v,i)=>{ if(isNaN(v)) return;
+      g+=`<circle cx="${x(i)}" cy="${y(v)}" r="${s.r||5}" fill="${s.fill||"#fff"}" stroke="${s.color}" stroke-width="3"><title>${esc(s.name)}・${esc(xs[i])}：${f1(v)}</title></circle>`;
+      if(s.label) g+=`<text class="vl" x="${x(i)}" y="${y(v)-12}" text-anchor="middle" font-size="14" fill="${s.color}">${f1(v)}</text>`;
+    });
+  });
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="年度變化折線圖">${g}</svg>`;
+}
+function legendHTML(series){ return `<div class="legend-row">${series.map(s=>`<span><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("")}</div>`; }
+function sparkSVG(vals){
+  const pts=vals.map((v,i)=>({v,i})).filter(p=>!isNaN(p.v));
+  if(!pts.length) return "—";
+  const W=96,H=30,P=5, mn=Math.min(...pts.map(p=>p.v),9), mx=10;
+  const x=i=>vals.length===1?W/2:P+i*(W-2*P)/(vals.length-1), y=v=>P+(mx-v)*(H-2*P)/Math.max(mx-mn,.5);
+  const d=pts.map((p,k)=>(k?"L":"M")+x(p.i)+" "+y(p.v)).join(" ");
+  return `<svg class="spark" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><path d="${d}" fill="none" stroke="#0B1A3A" stroke-width="2.5"/>${pts.map(p=>`<circle cx="${x(p.i)}" cy="${y(p.v)}" r="3.5" fill="#FF5A1F" stroke="#0B1A3A" stroke-width="1.5"/>`).join("")}</svg>`;
+}
+function chgHTML(a,b){
+  if(isNaN(a)||isNaN(b)) return `<span class="chg">—</span>`;
+  const d=b-a; const cls=d>0.005?"up":(d<-0.005?"down":"");
+  return `<span class="chg ${cls}">${d>0.005?"▲":(d<-0.005?"▼":"＝")} ${Math.abs(d).toFixed(2)}</span>`;
+}
+const SERIES_STYLE=[
+  {name:"整體平均", color:"#FF5A1F", w:4, r:6, fill:"#FF5A1F", label:true},
+  {name:"教學內容與組織", color:"#0B1A3A", w:2.5, r:4},
+  {name:"教學互動與參與", color:"#3D5A99", w:2.5, r:4, dash:"7 5"},
+  {name:"回饋與問題解決", color:"#8A94B0", w:2.5, r:4, dash:"2 5"}
+];
+
 /* 01 年度比較（不受「完訓年度」篩選影響，只受職級篩選） */
+function evalYearOf(r){ const y=parseInt(String(r.time).slice(0,4),10); return y ? String(y-1911) : "未知"; }
 function yearCompareHTML(){
-  const rows = rowsFiltered(false);
-  const ys = yearsAll().filter(y=>rows.some(r=>yearOf(r.teacher)===y));
+  const byEval = state.cmp==="eval";
+  const rows = byEval ? rowsFiltered(true) : rowsFiltered(false);
+  const keyOf = byEval ? evalYearOf : (r=>yearOf(r.teacher));
+  const ys = [...new Set(rows.map(keyOf))].sort((a,b)=>(+a||9999)-(+b||9999));
   if(!ys.length) return "";
-  const per = ys.map(y=>{ const rs=rows.filter(r=>yearOf(r.teacher)===y); return {y, s:stats(rs), t:new Set(rs.map(r=>r.teacher)).size}; });
+  const colorOf = y => byEval ? YEAR_COLORS[ys.indexOf(y)%YEAR_COLORS.length] : yearColor(y);
+  const suffix = byEval ? "評核" : "完訓";
+  const per = ys.map(y=>{ const rs=rows.filter(r=>keyOf(r)===y); return {y, s:stats(rs), t:new Set(rs.map(r=>r.teacher)).size}; });
   const best = Math.max(...per.map(p=>p.s.avg));
-  const cards = per.map(p=>`
+  const cards = per.map((p,k)=>`
     <div class="ycard">
-      <div class="ycard-top"><span class="swatch" style="background:${yearColor(p.y)}"></span>${esc(yearLabel(p.y))}完訓</div>
+      <div class="ycard-top"><span class="swatch" style="background:${colorOf(p.y)}"></span>${esc(yearLabel(p.y))}${suffix}</div>
       <div class="ycard-val">${f1(p.s.avg)}</div>
+      ${k>0?`<div class="ycard-chg">較前一年度 ${chgHTML(per[k-1].s.avg,p.s.avg)}</div>`:""}
       <div class="ycard-sub">${p.t} 位教師・${p.s.n} 份回覆・滿意以上 ${pct(p.s.sat)}${p.s.avg===best&&per.length>1?"・最高":""}</div>
     </div>`).join("");
-  const groups = [{name:"整體平均", get:p=>p.s.avg}].concat(DIMS.map((d,i)=>({name:d.name, get:p=>p.s.dims[i]})))
-    .map(g=>`
-      <div class="dim-group">
-        <div class="dim-title">${g.name}</div>
-        ${per.map(p=>{const v=g.get(p);return `
-          <div class="bar-row">
-            <span class="bar-lbl">${esc(yearLabel(p.y))}</span>
-            <div class="bar-track"><div class="bar-fill" style="width:${isNaN(v)?0:v*10}%;background:${yearColor(p.y)}"></div></div>
-            <span class="bar-val">${f1(v)}</span>
-          </div>`;}).join("")}
-      </div>`).join("");
+  const series = SERIES_STYLE.map((st,k)=>Object.assign({},st,{vals: per.map(p=> k===0 ? p.s.avg : p.s.dims[k-1])}));
+  const chart = legendHTML(series) + lineSVG(per.map(p=>yearLabel(p.y)), series, 230)
+    + (per.length<2 ? `<div class="axis-note">目前只有一個年度的資料，累積第二個年度後即可看出變化趨勢</div>` : "");
+  const sw = (v,l)=>`<button class="chip${state.cmp===v?" on":""}" data-grp="cmp" data-val="${v}" type="button">${l}</button>`;
   return `
     <section class="card">
-      <div class="card-head"><div class="card-no">01</div><h2>年度完訓教師滿意度比較<small>各完訓年度教師所獲評分（不受上方「完訓年度」篩選影響）</small></h2></div>
+      <div class="card-head"><div class="card-no">01</div><h2>年度滿意度比較<small>${byEval?"依問卷填寫時間（民國年）比較各年度評核結果；套用上方篩選":"依教師完訓年度比較；不受上方「完訓年度」篩選影響"}</small></h2>
+        <div class="chips">${sw("eval","依評核年度")}${sw("cohort","依完訓年度")}</div></div>
       <div class="year-cards">${cards}</div>
-      ${groups}
-      <div class="axis-note">長條滿格 = 10 分</div>
+      ${chart}
     </section>`;
 }
 
@@ -530,15 +587,22 @@ function itemsHTML(s){
 }
 
 /* 03 教師一覽 */
+function evalYears(rows){ return [...new Set(rows.map(evalYearOf))].sort((a,b)=>(+a||9999)-(+b||9999)); }
 function teacherRows(){
   const rows = rowsFiltered();
+  const EY = evalYears(rows);
+  // 只列出有被評核的教師
   const names = new Set(rows.map(r=>r.teacher));
-  // 也列出名單中尚無回覆的教師
-  TEACHERS.forEach(t=>{ if(state.year==="all"||(t.year||"未填")===state.year) names.add(t.name); });
   let list = [...names].map(name=>{
     const rs = rows.filter(r=>r.teacher===name), s = stats(rs);
-    const lowI = rs.length ? s.items.indexOf(Math.min(...s.items)) : -1;
-    return {name, year:yearOf(name), n:rs.length, avg:s.avg, d0:s.dims[0], d1:s.dims[1], d2:s.dims[2], low: lowI>=0?ITEMS[lowI]:"", lowV: lowI>=0?s.items[lowI]:NaN};
+    const lowI = s.items.indexOf(Math.min(...s.items));
+    const o = {name, year:yearOf(name), n:rs.length, avg:s.avg, low:ITEMS[lowI], lowV:s.items[lowI]};
+    o.ys = EY.map(y=>stats(rs.filter(r=>evalYearOf(r)===y)).avg);
+    EY.forEach((y,k)=>o["y_"+y]=o.ys[k]);
+    const has = o.ys.map((v,k)=>[v,k]).filter(p=>!isNaN(p[0]));
+    o.chg = has.length>=2 ? has[has.length-1][0]-has[has.length-2][0] : NaN;
+    o.chgA = has.length>=2 ? has[has.length-2][0] : NaN; o.chgB = has.length>=2 ? has[has.length-1][0] : NaN;
+    return o;
   });
   if(state.q) list = list.filter(t=>t.name.includes(state.q));
   const k=state.sortKey, dir=state.sortDir;
@@ -553,24 +617,25 @@ function teacherTableHTML(){
   const list = teacherRows();
   const overall = stats(rowsFiltered()).avg;
   const th = (k,label,r) => `<th class="${r?"r":""}" data-sort="${k}">${label}<span class="arr">${state.sortKey===k?(state.sortDir>0?"▲":"▼"):"↕"}</span></th>`;
+  const EY = evalYears(rowsFiltered());
+  const multi = EY.length>=2;
   const body = list.map(t=>`
     <tr data-teacher="${esc(t.name)}">
-      <td class="name">${esc(t.name)}${t.n&&t.n<LOW_N?'<span class="tag warn">樣本少</span>':""}${!t.n?'<span class="tag">尚無回覆</span>':""}</td>
+      <td class="name">${esc(t.name)}</td>
       <td>${esc(yearLabel(t.year))}</td>
       <td class="r score">${t.n}</td>
       <td class="r score ${t.avg<overall-0.3?"lo":""}">${f1(t.avg)}</td>
-      <td class="r score">${f1(t.d0)}</td>
-      <td class="r score">${f1(t.d1)}</td>
-      <td class="r score">${f1(t.d2)}</td>
-      <td>${t.low?esc(t.low)+` <span class="score">${f1(t.lowV)}</span>`:"—"}</td>
+      ${multi?EY.map((y,k)=>`<td class="r score">${f1(t.ys[k])}</td>`).join("")+`<td class="r">${chgHTML(t.chgA,t.chgB)}</td><td>${sparkSVG(t.ys)}</td>`:""}
+      <td>${esc(t.low)} <span class="score">${f1(t.lowV)}</span></td>
     </tr>`).join("");
+  const cols = 5 + (multi?EY.length+2:0);
   return `
     <section class="card">
-      <div class="card-head"><div class="card-no">03</div><h2>受評教師一覽<small>點選教師可查看 12 題項明細與學員回饋；橘色分數 = 低於整體平均 0.3 分以上</small></h2></div>
+      <div class="card-head"><div class="card-no">03</div><h2>受評教師一覽<small>僅列出有學員評核的教師・點選可查看年度變化、12 題項與學員回饋；橘色分數 = 低於整體平均 0.3 分以上${multi?"；變化 = 最近兩個有資料年度之差":""}</small></h2></div>
       <div class="table-tools"><input class="search" id="search" placeholder="搜尋教師姓名" value="${esc(state.q)}"></div>
       <div class="tbl-wrap"><table>
-        <thead><tr>${th("name","教師")}${th("year","完訓年度")}${th("n","回覆數",1)}${th("avg","整體平均",1)}${th("d0","內容組織",1)}${th("d1","互動參與",1)}${th("d2","回饋解決",1)}${th("lowV","最低題項")}</tr></thead>
-        <tbody>${body||`<tr><td colspan="8" style="text-align:center;color:var(--muted)">找不到符合的教師</td></tr>`}</tbody>
+        <thead><tr>${th("name","教師")}${th("year","完訓年度")}${th("n","回覆數",1)}${th("avg","整體平均",1)}${multi?EY.map(y=>th("y_"+y,y+" 年度評核",1)).join("")+th("chg","變化",1)+`<th>年度趨勢</th>`:""}${th("lowV","最低題項")}</tr></thead>
+        <tbody>${body||`<tr><td colspan="${cols}" style="text-align:center;color:var(--muted)">${state.q?"找不到符合的教師":"此篩選條件下尚無教師被評核"}</td></tr>`}</tbody>
       </table></div>
     </section>`;
 }
@@ -598,6 +663,12 @@ function openDetail(name){
       <div class="cmp-track"><div class="cmp-fill" style="width:${(s.items[i]||0)*10}%"></div><div class="cmp-mark" style="left:calc(${base.items[i]*10}% - 1px)" title="全體平均 ${f1(base.items[i])}"></div></div>
       <span class="score" style="text-align:right">${f1(s.items[i])}</span></div>`).join("");
   const cs = rows.filter(r=>r.comment&&r.comment.trim());
+  const allRows = rowsFiltered(false), EY = evalYears(allRows);
+  const trend = [
+    {name:name+" 老師", color:"#FF5A1F", w:4, r:6, fill:"#FF5A1F", label:true, vals:EY.map(y=>stats(rows.filter(r=>evalYearOf(r)===y)).avg)},
+    {name:"全體教師平均", color:"#0B1A3A", w:2.5, r:4, dash:"7 5", vals:EY.map(y=>stats(allRows.filter(r=>evalYearOf(r)===y)).avg)}
+  ];
+  const trendHTML = `<div class="sec-title">年度滿意度變化（依評核年度）</div>${legendHTML(trend)}${lineSVG(EY.map(yearLabel),trend,220)}`;
   $("detailBox").innerHTML = `
     <div class="modal-head"><h3>${esc(name)} 老師<small>${esc(yearLabel(yearOf(name)))}完訓・職級篩選：${state.rank==="all"?"全部":esc(state.rank)}</small></h3><button class="x" type="button" data-close>✕</button></div>
     ${rows.length?`
@@ -606,6 +677,7 @@ function openDetail(name){
       <div class="kpi"><div class="kpi-lbl">回覆數</div><div class="kpi-val">${s.n}</div></div>
       <div class="kpi"><div class="kpi-lbl">滿意以上</div><div class="kpi-val">${pct(s.sat)}</div></div>
     </div>
+    ${trendHTML}
     <div class="sec-title">12 題項（橘條 = 本師平均；直線 = 全體教師平均）</div>
     ${cmp}
     <div class="sec-title">填答者職級</div>
@@ -787,6 +859,8 @@ $("bulkBtn").addEventListener("click",async()=>{
 document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m||e.target.closest("[data-close]")) m.classList.remove("show"); }));
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.querySelectorAll(".modal.show").forEach(m=>m.classList.remove("show")); });
 $("refreshBtn").addEventListener("click",load);
+let _rw=window.innerWidth;
+window.addEventListener("resize",()=>{ clearTimeout(window._rt); window._rt=setTimeout(()=>{ if((window.innerWidth<600)!==(_rw<600)&&RESPONSES.length){ _rw=window.innerWidth; render(); } else _rw=window.innerWidth; },200); });
 
 /* ===================== 示範資料（?demo） ===================== */
 function demoData(){
@@ -799,7 +873,7 @@ function demoData(){
   for(let i=0;i<70;i++){
     const t=teachers[Math.floor(rnd()*7)]; const base={"113":8.6,"114":9.0,"115":9.4}[t.year]-(t.name.endsWith("戊")?1.4:0);
     const scores=items.map((_,k)=>Math.max(4,Math.min(10,Math.round(base+(rnd()-.5)*2.4-(k>=9?.3:0)))));
-    responses.push({id:i+1,time:`2026-${String(1+Math.floor(rnd()*9)).padStart(2,"0")}-${String(1+Math.floor(rnd()*27)).padStart(2,"0")} 10:00`,rank:RANKS[Math.floor(rnd()*4)],teacher:t.name,scores,comment:rnd()<.25?cm[Math.floor(rnd()*4)]:""});
+    responses.push({id:i+1,time:`${rnd()<.45?2025:2026}-${String(1+Math.floor(rnd()*9)).padStart(2,"0")}-${String(1+Math.floor(rnd()*27)).padStart(2,"0")} 10:00`,rank:RANKS[Math.floor(rnd()*4)],teacher:t.name,scores,comment:rnd()<.25?cm[Math.floor(rnd()*4)]:""});
   }
   return demoData.cache={ok:true,items,teachers,responses};
 }
