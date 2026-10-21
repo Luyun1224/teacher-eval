@@ -329,7 +329,7 @@ footer{margin-top:40px;padding-top:16px;border-top:var(--line);font-size:14px;fo
 const GAS_URL = "https://script.google.com/macros/s/AKfycbxz_0YHJ1beujwlQb7bdcMt38wF77BiXdAdJzbOoFvj2WWDdYPHR1nzCagAkNM3gn-g/exec";
 
 // 教師名單由 Google Sheet「教師名單」工作表 A 欄讀取；預覽模式（未設定 GAS_URL）時使用以下示範名單
-const DEMO_TEACHERS = ["示範教師A","示範教師B","示範教師C"];
+const DEMO_TEACHERS = [{name:"示範教師A",year:"115"},{name:"示範教師B",year:"115"},{name:"示範教師C",year:"114"}];
 
 // 題組（題目文字與原 Forms 欄位完全一致，以利資料延續）
 const SECTIONS = [
@@ -365,7 +365,15 @@ async function loadTeachers(){
       if(!data.ok) throw new Error(data.error||"讀取失敗");
       list=data.teachers;
     }
-    sel.innerHTML='<option value="">請選擇教師</option>'+list.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("");
+    list=list.map(t=>typeof t==="string"?{name:t,year:""}:t);
+    // 依完訓年度分組，新年度在前
+    const groups={};
+    list.forEach(t=>{(groups[t.year||""]=groups[t.year||""]||[]).push(t.name);});
+    const years=Object.keys(groups).sort((a,b)=>(+b||0)-(+a||0));
+    sel.innerHTML='<option value="">請選擇教師</option>'+years.map(y=>{
+      const opts=groups[y].map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join("");
+      return `<optgroup label="${y?esc(y)+" 年度完訓":"未填年度"}">${opts}</optgroup>`;
+    }).join("");
     if(!list.length) sel.innerHTML='<option value="">目前名單為空，請洽承辦人</option>';
     sel.disabled=!list.length;
   }catch(err){
