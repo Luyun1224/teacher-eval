@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>完訓教師教學評估</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#FF5A1F;
+  --orange-soft:#FFD9C7;
+  --navy:#0B1A3A;
+  --navy-2:#22325A;
+  --cream:#FFF4E2;
+  --paper:#FFFBF4;
+  --ink:#0B1A3A;
+  --muted:#5A6480;
+  --line:3px solid var(--navy);
+  --r-lg:28px;
+  --r-md:18px;
+  --pill:999px;
+  --shadow:5px 5px 0 var(--navy);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--cream);
+  color:var(--ink);
+  font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;
+  line-height:1.6;
+  min-height:100vh;
+}
+.wrap{max-width:880px;margin:0 auto;padding:0 16px 80px}
+
+/* ---------- 頂部列 ---------- */
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  padding:18px 0;border-bottom:var(--line);margin-bottom:28px;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:15px;letter-spacing:.04em}
+.brand-dot{width:28px;height:28px;border-radius:50%;background:var(--orange);border:var(--line);flex:none}
+.tag{
+  font-family:"Archivo Black","Noto Sans TC",sans-serif;font-size:12px;letter-spacing:.12em;
+  border:var(--line);border-radius:var(--pill);padding:4px 14px;background:var(--paper);white-space:nowrap;
+}
+
+/* ---------- Hero ---------- */
+.hero{
+  background:var(--navy);color:var(--cream);
+  border:var(--line);border-radius:var(--r-lg);
+  padding:36px 32px 32px;position:relative;overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.hero-kicker{
+  display:inline-block;background:var(--orange);color:var(--navy);
+  font-family:"Archivo Black","Noto Sans TC",sans-serif;font-size:12px;letter-spacing:.14em;
+  padding:5px 14px;border-radius:var(--pill);border:2px solid var(--cream);margin-bottom:18px;
+}
+.hero h1{
+  font-weight:900;font-size:clamp(34px,7vw,58px);line-height:1.12;letter-spacing:.01em;
+}
+.hero h1 .hl{color:var(--orange)}
+.nw{white-space:nowrap;display:inline-block}
+.hero p{margin-top:16px;font-size:15px;color:#D8DDEA;max-width:560px}
+.hero-circle{
+  position:absolute;right:-46px;top:-46px;width:170px;height:170px;border-radius:50%;
+  background:var(--orange);border:3px solid var(--cream);
+}
+.hero-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:28px}
+.meta-box{border:2px solid var(--cream);border-radius:var(--r-md);padding:12px 14px}
+.meta-num{font-family:"Archivo Black",sans-serif;font-size:26px;line-height:1;color:var(--orange)}
+.meta-lbl{font-size:13px;font-weight:700;margin-top:6px;color:var(--cream)}
+
+/* ---------- 進度列 ---------- */
+.progress{
+  position:sticky;top:0;z-index:20;background:var(--cream);
+  padding:14px 0;margin:24px 0 8px;border-bottom:var(--line);
+  display:flex;align-items:center;gap:14px;
+}
+.progress-track{flex:1;height:16px;border:var(--line);border-radius:var(--pill);background:var(--paper);overflow:hidden}
+.progress-fill{height:100%;width:0;background:var(--orange);border-right:3px solid var(--navy);transition:width .25s}
+.progress-fill.zero{border-right:none}
+.progress-txt{font-family:"Archivo Black",sans-serif;font-size:15px;min-width:58px;text-align:right}
+
+/* ---------- 區塊卡片 ---------- */
+.card{
+  background:var(--paper);border:var(--line);border-radius:var(--r-lg);
+  padding:28px;margin-top:24px;
+}
+.card-head{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+.card-no{
+  flex:none;width:52px;height:52px;border-radius:50%;
+  background:var(--orange);border:var(--line);
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Archivo Black",sans-serif;font-size:20px;color:var(--navy);
+}
+.card-head h2{font-weight:900;font-size:24px;line-height:1.25}
+.card-head small{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:2px}
+
+/* ---------- 基本資料 ---------- */
+.field{margin-bottom:20px}
+.field:last-child{margin-bottom:0}
+.label{display:block;font-weight:900;font-size:16px;margin-bottom:8px}
+.req{color:var(--orange)}
+.hint{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:-4px;margin-bottom:8px}
+.input,textarea.input{
+  width:100%;font:inherit;font-size:16px;font-weight:500;color:var(--ink);
+  background:#fff;border:var(--line);border-radius:var(--r-md);padding:13px 16px;outline:none;
+}
+.input:focus{background:var(--orange-soft)}
+textarea.input{min-height:130px;resize:vertical}
+.select-wrap{position:relative}
+.select-wrap::after{
+  content:"";position:absolute;right:20px;top:50%;width:10px;height:10px;
+  border-right:3px solid var(--navy);border-bottom:3px solid var(--navy);
+  transform:translateY(-70%) rotate(45deg);pointer-events:none;
+}
+select.input{appearance:none;-webkit-appearance:none;padding-right:48px;cursor:pointer}
+select.input:disabled{cursor:wait;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip input{position:absolute;opacity:0;pointer-events:none}
+.chip span{
+  display:inline-block;font-weight:900;font-size:15px;
+  border:var(--line);border-radius:var(--pill);padding:9px 22px;background:#fff;cursor:pointer;
+  transition:transform .08s;
+}
+.chip input:checked + span{background:var(--navy);color:var(--cream)}
+.chip input:focus-visible + span{outline:3px dashed var(--orange);outline-offset:3px}
+.chip span:active{transform:translate(2px,2px)}
+
+/* ---------- 評分題 ---------- */
+.legend{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:6px;
+  border:var(--line);border-radius:var(--r-md);overflow:hidden;margin-bottom:22px;
+}
+.legend div{padding:8px 4px;text-align:center;font-size:12px;font-weight:700;line-height:1.35}
+.legend b{display:block;font-family:"Archivo Black",sans-serif;font-size:14px}
+.lv1{background:#fff}.lv2{background:#fff}.lv3{background:var(--cream)}.lv4{background:var(--orange-soft)}.lv5{background:var(--orange)}
+
+.q{padding:18px 0;border-top:2px dashed var(--navy)}
+.q:first-of-type{border-top:none;padding-top:0}
+.q-top{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+.q-idx{flex:none;font-family:"Archivo Black",sans-serif;font-size:14px;width:34px;color:var(--orange)}
+.q-title{flex:1;font-weight:900;font-size:17px}
+.q-badge{
+  flex:none;font-size:12px;font-weight:900;border:2px solid var(--navy);border-radius:var(--pill);
+  padding:2px 12px;background:#fff;min-width:96px;text-align:center;
+}
+.q-badge.on{background:var(--navy);color:var(--cream)}
+.scale{display:grid;grid-template-columns:repeat(10,1fr);gap:8px;padding-left:46px}
+.scale label{position:relative}
+.scale input{position:absolute;opacity:0;pointer-events:none}
+.scale span{
+  display:flex;align-items:center;justify-content:center;height:44px;
+  border:var(--line);border-radius:var(--pill);background:#fff;cursor:pointer;
+  font-family:"Archivo Black",sans-serif;font-size:16px;transition:transform .08s;
+}
+.scale span:active{transform:translate(2px,2px)}
+.scale input:checked + span{background:var(--orange);box-shadow:3px 3px 0 var(--navy);transform:translate(-1px,-1px)}
+.scale input:focus-visible + span{outline:3px dashed var(--navy);outline-offset:3px}
+.q.missing .q-title{color:var(--orange)}
+.q.missing .scale span{border-color:var(--orange)}
+.field.missing .input,.field.missing .chip span{border-color:var(--orange)}
+.err{display:none;font-size:13px;font-weight:900;color:var(--orange);margin-top:8px;padding-left:46px}
+.field .err{padding-left:0}
+.missing .err{display:block}
+
+/* ---------- 送出 ---------- */
+.submit-zone{
+  margin-top:28px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;
+  background:var(--orange);border:var(--line);border-radius:var(--r-lg);padding:22px 26px;box-shadow:var(--shadow);
+}
+.submit-zone p{font-weight:900;font-size:17px;line-height:1.4}
+.submit-zone p small{display:block;font-weight:500;font-size:13px}
+.btn{
+  font:inherit;font-weight:900;font-size:17px;letter-spacing:.06em;
+  background:var(--navy);color:var(--cream);border:var(--line);border-radius:var(--pill);
+  padding:14px 34px;cursor:pointer;transition:transform .08s;
+}
+.btn:hover{background:var(--navy-2)}
+.btn:active{transform:translate(3px,3px)}
+.btn[disabled]{opacity:.6;cursor:wait}
+.btn.ghost{background:var(--paper);color:var(--navy)}
+
+/* ---------- 完成畫面 ---------- */
+.done{display:none;text-align:center;padding:48px 28px}
+.done .big{
+  width:110px;height:110px;margin:0 auto 22px;border-radius:50%;background:var(--orange);border:var(--line);
+  display:flex;align-items:center;justify-content:center;font-family:"Archivo Black",sans-serif;font-size:52px;
+}
+.done h2{font-weight:900;font-size:32px}
+.done p{margin:10px 0 26px;color:var(--muted);font-weight:500}
+.score-pill{
+  display:inline-block;border:var(--line);border-radius:var(--pill);padding:8px 22px;
+  font-weight:900;background:var(--cream);margin-bottom:26px;
+}
+
+.toast{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140%);
+  background:var(--navy);color:var(--cream);border:3px solid var(--orange);border-radius:var(--pill);
+  padding:12px 24px;font-weight:900;font-size:15px;z-index:50;transition:transform .25s;max-width:calc(100% - 32px);text-align:center;
+}
+.toast{visibility:hidden}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
+footer{margin-top:40px;padding-top:16px;border-top:var(--line);font-size:14px;font-weight:900;text-align:center;letter-spacing:.04em}
+
+/* ---------- 手機 ---------- */
+@media (max-width:640px){
+  .hero{padding:28px 20px 22px}
+  .hero-circle{width:120px;height:120px;right:-40px;top:-40px}
+  .hero-meta{gap:8px}
+  .meta-box{padding:10px}
+  .meta-num{font-size:22px}
+  .meta-lbl{font-size:12px}
+  .card{padding:22px 18px}
+  .card-head h2{font-size:20px}
+  .card-no{width:44px;height:44px;font-size:17px}
+  .scale{grid-template-columns:repeat(5,1fr);padding-left:0}
+  .err{padding-left:0}
+  .q-top{flex-wrap:wrap}
+  .q-idx{width:auto}
+  .q-badge{order:3;margin-left:auto}
+  .legend div{font-size:11px;padding:6px 2px}
+  .submit-zone{padding:20px}
+  .btn{width:100%}
+  .tag{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand"><span class="brand-dot"></span>奇美醫院教學部｜一般醫學內科訓練示範中心</div>
+    <span class="tag">TEACHER EVALUATION</span>
+  </header>
+
+  <div id="formView">
+    <section class="hero">
+      <div class="hero-circle"></div>
+      <span class="hero-kicker">SURVEY・學員填寫</span>
+      <h1>完訓教師<br><span class="hl nw">教學評估</span><span class="nw">滿意度調查</span></h1>
+      <p>請依本次受訓期間該位教師之實際教學表現評分。本問卷採匿名填答，您的意見將作為教師教學品質改善與師資培育之參考。</p>
+      <div class="hero-meta">
+        <div class="meta-box"><div class="meta-num">12</div><div class="meta-lbl">評分題目</div></div>
+        <div class="meta-box"><div class="meta-num">1–10</div><div class="meta-lbl">評分量尺</div></div>
+        <div class="meta-box"><div class="meta-num">~2</div><div class="meta-lbl">分鐘完成</div></div>
+      </div>
+    </section>
+
+    <div class="progress" aria-live="polite">
+      <div class="progress-track"><div class="progress-fill zero" id="pFill"></div></div>
+      <div class="progress-txt" id="pTxt">0/15</div>
+    </div>
+
+    <form id="evalForm" novalidate>
+      <!-- 01 基本資料 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="card-no">01</div>
+          <h2>基本資料<small>Basic Information</small></h2>
+        </div>
+
+        <div class="field" data-req="rank">
+          <span class="label">評估者職級 <span class="req">*</span></span>
+          <div class="chips" role="radiogroup" aria-label="評估者職級">
+            <label class="chip"><input type="radio" name="rank" value="UGY"><span>UGY</span></label>
+            <label class="chip"><input type="radio" name="rank" value="PGY1"><span>PGY1</span></label>
+            <label class="chip"><input type="radio" name="rank" value="PGY2"><span>PGY2</span></label>
+            <label class="chip"><input type="radio" name="rank" value="Resident"><span>Resident</span></label>
+          </div>
+          <div class="err">請選擇職級</div>
+        </div>
+
+        <div class="field" data-req="teacher">
+          <label class="label" for="teacher">被評估之教師姓名 <span class="req">*</span></label>
+          <div class="select-wrap">
+            <select class="input" id="teacher" name="teacher" disabled>
+              <option value="">名單載入中…</option>
+            </select>
+          </div>
+          <div class="err">請選擇被評估之教師</div>
+        </div>
+      </section>
+
+      <!-- 評分說明 + 題組由 JS 產生 -->
+      <div id="sections"></div>
+
+      <!-- 05 建議 -->
+      <section class="card">
+        <div class="card-head">
+          <div class="card-no">05</div>
+          <h2>建議及回饋<small>Comments（選填）</small></h2>
+        </div>
+        <div class="field">
+          <label class="label" for="comment">想對老師說的話、或對教學的建議</label>
+          <textarea class="input" id="comment" name="comment" maxlength="1000" placeholder="例如：老師很有耐心，講解清楚……"></textarea>
+        </div>
+      </section>
+
+      <div class="submit-zone">
+        <p>確認填答完畢了嗎？<small>送出後即無法修改，感謝您的寶貴意見</small></p>
+        <button class="btn" type="submit" id="submitBtn">送出問卷 →</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 完成畫面 -->
+  <section class="card done" id="doneView">
+    <div class="big">✓</div>
+    <h2>感謝您的填寫！</h2>
+    <p>您的回饋已成功送出，將協助教師持續精進教學品質。</p>
+    <div class="score-pill" id="doneScore"></div><br>
+    <button class="btn ghost" type="button" id="againBtn">再評一位教師</button>
+  </section>
+
+  <footer>
+    <span>奇美醫院教學部｜一般醫學內科訓練示範中心</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== 設定 ===================== */
+// 部署 Code.gs 為「網頁應用程式」後，將網址貼在這裡；留空則為預覽模式（不寫入資料）
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxz_0YHJ1beujwlQb7bdcMt38wF77BiXdAdJzbOoFvj2WWDdYPHR1nzCagAkNM3gn-g/exec";
+
+// 教師名單由 Google Sheet「教師名單」工作表 A 欄讀取；預覽模式（未設定 GAS_URL）時使用以下示範名單
+const DEMO_TEACHERS = ["示範教師A","示範教師B","示範教師C"];
+
+// 題組（題目文字與原 Forms 欄位完全一致，以利資料延續）
+const SECTIONS = [
+  { no:"02", title:"教學內容與組織", en:"Content & Organization",
+    items:["醫學知識說明","有組織的教學方式","運用臨床實例輔助說明","條理分明的引導學員","善運用比喻等教學技巧","整體教學時間控制"] },
+  { no:"03", title:"教學互動與參與", en:"Interaction & Engagement",
+    items:["誘導學員參與討論","教學互動(教師與學員)","鼓勵學員有問題即時提出"] },
+  { no:"04", title:"回饋與問題解決", en:"Feedback & Guidance",
+    items:["明確指出學員值得肯定之處","具體解釋學員不當表現之處","了解學員問題與解決"] }
+];
+
+// 1–10 分對應文字（沿用原問卷）
+function levelText(n){
+  if(n>=9) return "非常滿意";
+  if(n>=7) return "滿意";
+  if(n>=5) return "普通";
+  if(n>=3) return "不滿意";
+  return "非常不滿意";
+}
+
+/* ===================== 產生題目 ===================== */
+const ITEMS = SECTIONS.flatMap(s=>s.items);
+const TOTAL = 2 + ITEMS.length;
+
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+async function loadTeachers(){
+  const sel=document.getElementById("teacher");
+  let list=DEMO_TEACHERS;
+  try{
+    if(GAS_URL){
+      const res=await fetch(GAS_URL+"?action=teachers");
+      const data=await res.json();
+      if(!data.ok) throw new Error(data.error||"讀取失敗");
+      list=data.teachers;
+    }
+    sel.innerHTML='<option value="">請選擇教師</option>'+list.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join("");
+    if(!list.length) sel.innerHTML='<option value="">目前名單為空，請洽承辦人</option>';
+    sel.disabled=!list.length;
+  }catch(err){
+    sel.innerHTML='<option value="">名單載入失敗，請重新整理頁面</option>';
+    toast("教師名單載入失敗（"+err.message+"）");
+  }
+}
+
+let qi = 0;
+document.getElementById("sections").innerHTML = SECTIONS.map((s,si)=>{
+  const legend = si===0 ? `
+    <div class="legend" aria-hidden="true">
+      <div class="lv1"><b>1–2</b>非常不滿意</div>
+      <div class="lv2"><b>3–4</b>不滿意</div>
+      <div class="lv3"><b>5–6</b>普通</div>
+      <div class="lv4"><b>7–8</b>滿意</div>
+      <div class="lv5"><b>9–10</b>非常滿意</div>
+    </div>` : "";
+  const qs = s.items.map(item=>{
+    qi++;
+    const id = "q"+qi;
+    const btns = Array.from({length:10},(_,k)=>{
+      const v=k+1;
+      return `<label><input type="radio" name="${id}" value="${v}" aria-label="${item} ${v}分 ${levelText(v)}"><span>${v}</span></label>`;
+    }).join("");
+    return `
+      <div class="q" data-q="${id}">
+        <div class="q-top">
+          <span class="q-idx">Q${String(qi).padStart(2,"0")}</span>
+          <span class="q-title">${item} <span class="req">*</span></span>
+          <span class="q-badge" id="${id}b">尚未評分</span>
+        </div>
+        <div class="scale" role="radiogroup" aria-label="${item}">${btns}</div>
+        <div class="err">請為此題評分</div>
+      </div>`;
+  }).join("");
+  return `
+    <section class="card">
+      <div class="card-head">
+        <div class="card-no">${s.no}</div>
+        <h2>${s.title}<small>${s.en}</small></h2>
+      </div>
+      ${legend}${qs}
+    </section>`;
+}).join("");
+
+/* ===================== 互動 ===================== */
+const form = document.getElementById("evalForm");
+const $ = id=>document.getElementById(id);
+
+function answered(){
+  let n=0;
+  if(form.rank.value) n++;
+  if(form.teacher.value) n++;
+  ITEMS.forEach((_,i)=>{ if(form["q"+(i+1)].value) n++; });
+  return n;
+}
+function updateProgress(){
+  const n=answered();
+  $("pFill").style.width=(n/TOTAL*100)+"%";
+  $("pFill").classList.toggle("zero",n===0);
+  $("pTxt").textContent=n+"/"+TOTAL;
+}
+form.addEventListener("input",e=>{
+  const t=e.target;
+  if(/^q\d+$/.test(t.name)){
+    const b=$(t.name+"b");
+    b.textContent=t.value+" 分・"+levelText(+t.value);
+    b.classList.add("on");
+    t.closest(".q").classList.remove("missing");
+  } else {
+    const f=t.closest(".field"); if(f) f.classList.remove("missing");
+  }
+  updateProgress();
+});
+
+function toast(msg){
+  const el=$("toast"); el.textContent=msg; el.classList.add("show");
+  clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove("show"),2600);
+}
+
+function validate(){
+  let first=null;
+  const mark=(el,bad)=>{ el.classList.toggle("missing",bad); if(bad&&!first) first=el; };
+  mark(form.querySelector('[data-req="rank"]'), !form.rank.value);
+  mark(form.querySelector('[data-req="teacher"]'), !form.teacher.value);
+  ITEMS.forEach((_,i)=>mark(form.querySelector(`[data-q="q${i+1}"]`), !form["q"+(i+1)].value));
+  if(first){
+    first.scrollIntoView({behavior:"smooth",block:"center"});
+    toast("還有 "+(TOTAL-answered())+" 題尚未完成");
+    return false;
+  }
+  return true;
+}
+
+form.addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!validate()) return;
+  const scores = ITEMS.map((_,i)=>+form["q"+(i+1)].value);
+  const avg = scores.reduce((a,b)=>a+b,0)/scores.length;
+  const payload = {
+    rank: form.rank.value,
+    teacher: form.teacher.value,
+    items: ITEMS,
+    scores,
+    average: Math.round(avg*100)/100,
+    comment: form.comment.value.trim()
+  };
+  const btn=$("submitBtn"); btn.disabled=true; btn.textContent="送出中…";
+  try{
+    if(GAS_URL){
+      const res = await fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)});
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error||"寫入失敗");
+    } else {
+      console.log("[預覽模式] 未設定 GAS_URL，資料未寫入：",payload);
+      await new Promise(r=>setTimeout(r,500));
+    }
+    $("doneScore").textContent = payload.teacher+" 老師・平均 "+avg.toFixed(1)+" 分";
+    $("formView").style.display="none";
+    $("doneView").style.display="block";
+    window.scrollTo({top:0,behavior:"smooth"});
+  }catch(err){
+    toast("送出失敗，請稍後再試（"+err.message+"）");
+  }finally{
+    btn.disabled=false; btn.textContent="送出問卷 →";
+  }
+});
+
+// 再評一位：保留職級，清空教師與評分
+$("againBtn").addEventListener("click",()=>{
+  const keepRank=form.rank.value;
+  form.reset();
+  if(keepRank) form.querySelector(`input[name="rank"][value="${keepRank}"]`).checked=true;
+  document.querySelectorAll(".q-badge").forEach(b=>{b.textContent="尚未評分";b.classList.remove("on");});
+  document.querySelectorAll(".missing").forEach(el=>el.classList.remove("missing"));
+  updateProgress();
+  $("doneView").style.display="none";
+  $("formView").style.display="block";
+  window.scrollTo({top:0});
+  setTimeout(()=>form.teacher.focus(),300);
+});
+
+updateProgress();
+loadTeachers();
+</script>
+</body>
+</html>
