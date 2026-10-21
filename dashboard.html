@@ -159,6 +159,27 @@ td.name{font-weight:900}
 .inp{width:100%;font:inherit;font-size:15px;font-weight:500;border:var(--line);border-radius:var(--pill);padding:8px 16px;background:#fff;outline:none;color:var(--ink)}
 .inp:focus{background:var(--orange-soft)}
 .admin-list{margin-top:16px}
+.bulk{margin-top:14px;background:var(--paper);border:var(--line);border-radius:var(--r-md);overflow:hidden}
+.bulk-toggle{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:none;border:none;cursor:pointer;text-align:left;font-weight:900;font-size:16px}
+.bulk-hint{font-size:13px;font-weight:500;color:var(--muted);flex:1}
+.bulk-arr{width:30px;height:30px;flex:none;border:2px solid var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900}
+.bulk-body{display:none;padding:0 16px 16px;border-top:2px dashed var(--navy)}
+.bulk.open .bulk-body{display:block}
+.bulk.open .bulk-arr{background:var(--navy);color:var(--cream)}
+.bulk-grid{display:grid;grid-template-columns:1fr 240px;gap:16px;margin-top:14px}
+.bulk-ta{border-radius:var(--r-md);min-height:190px;resize:vertical;line-height:1.7}
+.bulk-side{display:flex;flex-direction:column;gap:12px}
+.bulk-side .btn{width:100%}
+.bulk-note{font-size:12px;font-weight:700;color:var(--muted);line-height:1.6}
+.bulk-preview{margin-top:14px}
+.bulk-preview:empty{display:none}
+.pv-head{font-weight:900;font-size:14px;margin-bottom:8px}
+.pv-head b{color:var(--orange)}
+.pv-list{display:flex;flex-wrap:wrap;gap:8px}
+.pv{font-size:13px;font-weight:900;border:2px solid var(--navy);border-radius:var(--pill);padding:3px 12px;background:#fff}
+.pv i{font-style:normal;font-family:"Archivo Black",sans-serif;font-size:12px;margin-left:6px;color:var(--orange)}
+.pv.dup{background:#E6E2DA;color:var(--muted);text-decoration:line-through}
+.pv.bad{background:var(--orange-soft)}
 .admin-list .tbl-wrap{background:var(--paper)}
 .admin-list table{min-width:620px}
 .admin-list tbody tr{cursor:default}
@@ -210,6 +231,8 @@ footer{margin-top:40px;padding-top:16px;border-top:var(--line);font-size:14px;fo
   .flabel{width:100%}
   .bar-row{grid-template-columns:72px 1fr 44px}
   .add-form{grid-template-columns:1fr}
+  .bulk-grid{grid-template-columns:1fr}
+  .bulk-hint{display:none}
   .detail-kpis{grid-template-columns:1fr 1fr 1fr;gap:8px}
   .detail-kpis .kpi-val{font-size:22px}
   .cmp-row{grid-template-columns:1fr 44px;row-gap:4px}
@@ -243,6 +266,27 @@ footer{margin-top:40px;padding-top:16px;border-top:var(--line);font-size:14px;fo
       <div class="fld"><label for="newNote">備註（選填）</label><input class="inp" id="newNote" placeholder="例如：一般內科" maxlength="200"></div>
       <button class="btn" type="submit" id="addBtn">＋ 新增教師</button>
     </form>
+
+    <div class="bulk">
+      <button class="bulk-toggle" type="button" id="bulkToggle" aria-expanded="false">
+        <span>📋 批次匯入教師名單</span><span class="bulk-hint">從 Excel 複製整欄貼上即可</span><span class="bulk-arr" id="bulkArr">＋</span>
+      </button>
+      <div class="bulk-body" id="bulkBody">
+        <div class="bulk-grid">
+          <div class="fld">
+            <label for="bulkText">貼上教師名單</label>
+            <textarea class="inp bulk-ta" id="bulkText" placeholder="一行一位，例如：&#10;王小明&#10;李大華&#10;陳美玲&#10;&#10;也可從 Excel 複製「姓名｜年度｜備註」三欄直接貼上；&#10;或用頓號、逗號分隔：王小明、李大華、陳美玲"></textarea>
+          </div>
+          <div class="bulk-side">
+            <div class="fld"><label for="bulkYear">完訓年度（民國）</label><input class="inp num" id="bulkYear" inputmode="numeric" maxlength="3"></div>
+            <p class="bulk-note">貼上內容若已含年度欄，以該欄為準；沒有年度的名字套用此年度。已在名單中的姓名會自動略過。</p>
+            <button class="btn" type="button" id="bulkBtn" disabled>匯入 0 位</button>
+            <button class="btn ghost sm" type="button" id="bulkClear">清空</button>
+          </div>
+        </div>
+        <div class="bulk-preview" id="bulkPreview"></div>
+      </div>
+    </div>
     <div class="admin-list">
       <div class="table-tools" style="margin-top:4px">
         <div class="chips" id="adminYearChips"></div>
@@ -675,6 +719,70 @@ $("adminTbody").addEventListener("change",e=>{
   adminAction({action:"updateTeacher",name,year:v}, name+" 改為 "+v+" 年度");
 });
 
+/* ---------- 批次匯入 ---------- */
+let bulkList = [];
+$("bulkToggle").addEventListener("click",()=>{
+  const b=$("bulkToggle").parentElement; const open=b.classList.toggle("open");
+  $("bulkToggle").setAttribute("aria-expanded",open); $("bulkArr").textContent=open?"－":"＋";
+  if(!$("bulkYear").value) $("bulkYear").value=CUR_ROC;
+  if(open) setTimeout(()=>$("bulkText").focus(),50);
+});
+function cleanName(n){ return n.replace(/\s+/g,"").replace(/(醫師|老師)$/,""); }
+function parseBulk(){
+  const defYear=$("bulkYear").value.trim();
+  const out=[], seen=new Set();
+  $("bulkText").value.split(/\r?\n/).forEach(line=>{
+    if(!line.trim()) return;
+    let cells;
+    if(line.includes("\t")){
+      // 從 Excel 貼上：姓名｜年度｜備註
+      const c=line.split("\t").map(x=>x.trim());
+      const y=(c[1]||"").replace(/[^\d]/g,"");
+      cells=[{name:c[0], year:/^\d{2,3}$/.test(y)?y:(c[1]?"":defYear), note:c[2]||"", badYear:!!c[1]&&!/^\d{2,3}$/.test(y)}];
+    } else {
+      cells=line.split(/[,，、;；\/]+|\s{2,}|\s(?=[\u4e00-\u9fff])/).map(n=>({name:n, year:defYear, note:""}));
+    }
+    cells.forEach(c=>{
+      const name=cleanName(c.name||"");
+      if(!name || /^(教師)?姓名$/.test(name) || seen.has(name)) return;
+      seen.add(name);
+      out.push({name, year:c.badYear?defYear:c.year, note:c.note});
+    });
+  });
+  return out;
+}
+function renderBulk(){
+  bulkList=parseBulk();
+  const exist=new Set(TEACHERS.map(t=>t.name));
+  const okYear=y=>/^\d{2,3}$/.test(y);
+  const news=bulkList.filter(t=>!exist.has(t.name)&&okYear(t.year));
+  const dups=bulkList.filter(t=>exist.has(t.name)).length;
+  const bad=bulkList.filter(t=>!exist.has(t.name)&&!okYear(t.year)).length;
+  $("bulkBtn").textContent="匯入 "+news.length+" 位";
+  $("bulkBtn").disabled=!news.length;
+  $("bulkPreview").innerHTML = bulkList.length ? `
+    <div class="pv-head">預覽：共 ${bulkList.length} 位，將新增 <b>${news.length}</b> 位${dups?`・${dups} 位已在名單中（略過）`:""}${bad?`・${bad} 位年度有誤`:""}</div>
+    <div class="pv-list">${bulkList.map(t=>{
+      const cls=exist.has(t.name)?"dup":(okYear(t.year)?"":"bad");
+      return `<span class="pv ${cls}">${esc(t.name)}<i>${esc(t.year||"?")}</i></span>`;}).join("")}</div>` : "";
+}
+$("bulkText").addEventListener("input",renderBulk);
+$("bulkYear").addEventListener("input",renderBulk);
+$("bulkClear").addEventListener("click",()=>{ $("bulkText").value=""; renderBulk(); $("bulkText").focus(); });
+$("bulkBtn").addEventListener("click",async()=>{
+  if(!token){ toast("請先登入"); return; }
+  const exist=new Set(TEACHERS.map(t=>t.name));
+  const list=bulkList.filter(t=>!exist.has(t.name)&&/^\d{2,3}$/.test(t.year));
+  if(!list.length) return;
+  const btn=$("bulkBtn"); btn.disabled=true; btn.textContent="匯入中…";
+  try{
+    const d=await apiPost({action:"bulkAddTeachers",token,list});
+    TEACHERS=d.teachers; render(); renderAdmin();
+    $("bulkText").value=""; renderBulk();
+    toast("已匯入 "+d.added+" 位教師"+((d.skipped||[]).length?"，略過 "+d.skipped.length+" 位重複":""));
+  }catch(err){ toast(err.message); renderBulk(); }
+});
+
 /* Modal 關閉 */
 document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m||e.target.closest("[data-close]")) m.classList.remove("show"); }));
 document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.querySelectorAll(".modal.show").forEach(m=>m.classList.remove("show")); });
@@ -699,6 +807,7 @@ function demoPost(b){
   const d=demoData();
   if(b.action==="login") return {ok:true,token:"demo"};
   if(b.action==="addTeacher"){ if(d.teachers.some(t=>t.name===b.name)) throw new Error("「"+b.name+"」已在名單中"); d.teachers.push({name:b.name,year:b.year,visible:true,note:b.note||""}); }
+  if(b.action==="bulkAddTeachers"){ let n=0; b.list.forEach(t=>{ if(!d.teachers.some(x=>x.name===t.name)){ d.teachers.push({name:t.name,year:t.year,visible:true,note:t.note||""}); n++; } }); return {ok:true,added:n,skipped:[],teachers:d.teachers}; }
   if(b.action==="updateTeacher"){ const t=d.teachers.find(t=>t.name===b.name); if("visible" in b) t.visible=b.visible; if("year" in b) t.year=b.year; }
   if(b.action==="deleteTeacher"){ d.teachers=d.teachers.filter(t=>t.name!==b.name); }
   return {ok:true,teachers:d.teachers};
