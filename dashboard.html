@@ -140,6 +140,50 @@ button{font:inherit;color:inherit}
 .mdetail summary::before{content:"＋";font-weight:900}
 .mdetail[open] summary{background:var(--navy);color:var(--cream)}
 .mdetail[open] summary::before{content:"－"}
+.sub-title{font-weight:900;font-size:17px;margin:22px 0 8px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.sub-title span{font-size:12px;font-weight:500;color:var(--muted)}
+.yc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-top:10px}
+.yc-num{font-family:"Archivo Black",sans-serif;font-size:24px;line-height:1.1}
+.yc-num.warn{color:var(--orange)}
+.yc-lbl{font-size:12px;font-weight:700;color:var(--muted)}
+.yc-concern{margin-top:12px;font-size:12px;font-weight:900;border:2px solid var(--navy);border-radius:var(--pill);padding:3px 12px;background:var(--cream)}
+.yc-concern.on{background:var(--orange-soft)}
+.year-cards{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.swarm{border:var(--line);border-radius:var(--r-md);background:#fff;padding:6px 18px 10px}
+.sw-row{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:end;padding:8px 0;border-top:1px dashed #D8CFC0}
+.sw-row.sw-axis{border-top:none;padding:4px 0 0}
+.sw-name{display:flex;align-items:center;gap:6px;font-weight:900;font-size:14px;padding-bottom:8px;white-space:nowrap}
+.sw-name small{font-size:12px;color:var(--muted);font-weight:700}
+.sw-plot{position:relative;display:block;margin:0 10px}
+.sw-plot.axis{height:18px}
+.sw-plot.axis span{position:absolute;transform:translateX(-50%);font-family:"Archivo Black",sans-serif;font-size:12px}
+.sw-plot i{position:absolute;top:0;bottom:0;width:1px;background:#EFE7DA}
+.sw-plot .tgt{position:absolute;top:0;bottom:0;border-left:2px dashed #1F7A4D}
+.sw-plot .med{position:absolute;top:0;bottom:0;width:4px;background:var(--orange);transform:translateX(-50%);text-decoration:none}
+.sw-plot .med em{position:absolute;top:-2px;left:8px;font-style:normal;font-size:11px;font-weight:900;color:var(--orange);white-space:nowrap;background:#fff;padding:0 3px}
+.tdot{position:absolute;width:16px;height:16px;border-radius:50%;background:var(--navy);border:2px solid #fff;outline:2px solid var(--navy);transform:translateX(-50%);cursor:pointer;padding:0;z-index:1}
+.tdot.concern{background:var(--orange)}
+.tdot:hover{transform:translateX(-50%) scale(1.3)}
+.tdot-lg,.med-lg,.tgt-lg{display:inline-block;flex:none}
+.tdot-lg{width:12px;height:12px;border-radius:50%;background:var(--navy);border:2px solid var(--navy)}
+.tdot-lg.concern{background:var(--orange)}
+.med-lg{width:4px;height:14px;background:var(--orange)}
+.tgt-lg{width:0;height:14px;border-left:2px dashed #1F7A4D}
+.cp-row{display:grid;grid-template-columns:90px 1fr;gap:10px;align-items:center;margin-bottom:10px}
+.cp-row .sw-name{padding:0}
+.wk-wrap{display:grid;gap:12px}
+.wk-card{border:var(--line);border-radius:var(--r-md);background:#fff;padding:12px 14px}
+.wk-avg{margin-left:auto;font-size:12px;font-weight:700;color:var(--muted)}
+.wk-list{list-style:none;margin-top:8px}
+.wk-list li{display:grid;grid-template-columns:34px 1fr 44px 50px;gap:6px;align-items:center;padding:5px 0;border-top:1px solid #E6DCCB;font-size:13px;font-weight:700}
+.wk-list li:first-child{border-top:none}
+.wk-q{font-family:"Archivo Black",sans-serif;font-size:11px;color:var(--orange);margin-right:6px}
+.wk-v{font-family:"Archivo Black",sans-serif;text-align:right}
+.wk-d{font-family:"Archivo Black",sans-serif;font-size:12px;color:var(--orange);text-align:right}
+table.heat{min-width:0}
+table.heat th{cursor:default}
+table.heat tbody tr{cursor:default}
+table.heat tbody tr:hover{background:transparent}
 .chg{font-family:"Archivo Black",sans-serif;font-size:13px}
 .chg.up{color:#1F7A4D}.chg.down{color:var(--orange)}
 .ycard-chg{font-size:12px;font-weight:900;margin-top:2px}
@@ -267,6 +311,10 @@ footer{margin-top:40px;padding-top:16px;border-top:var(--line);font-size:14px;fo
   .mrow.item-r .mname{padding-left:0}
 }
 @media (max-width:600px){
+  .sw-row{grid-template-columns:1fr;gap:4px}
+  .sw-row.sw-axis .sw-name{display:none}
+  .sw-name{padding-bottom:0}
+  .swarm{padding:6px 10px 10px}
   .hero{padding:26px 20px}
   .hero-circle{width:120px;height:120px;right:-44px;top:-44px}
   .card,.admin{padding:20px 16px}
@@ -506,72 +554,124 @@ function chgHTML(a,b){
   return `<span class="chg ${cls}">${d>0.005?"▲":(d<-0.005?"▼":"＝")} ${Math.abs(d).toFixed(2)}</span>`;
 }
 
-/* 01 年度完訓教師比較：點圖矩陣（每列一個構面／題項，同一軸上比較各完訓年度） */
-function yearCompareHTML(){
+/* 01 各年度完訓教師表現概況（各年度為不同教師群組，呈現分佈與達標，不做進步比較） */
+const TARGET = 9;        // 達標：教師個人平均 ≥ 9 分
+const CONCERN_AVG = 8;   // 需關注：個人平均 < 8 分
+const CONCERN_ITEM = 6;  // 或任一題平均 ≤ 6 分
+function median(a){ if(!a.length) return NaN; const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2?b[m]:(b[m-1]+b[m])/2; }
+
+function cohortData(){
   const rows = rowsFiltered(false);
   const ys = yearsAll().filter(y=>rows.some(r=>yearOf(r.teacher)===y));
-  if(!ys.length) return "";
-  const per = ys.map(y=>{ const rs=rows.filter(r=>yearOf(r.teacher)===y); return {y, s:stats(rs), t:new Set(rs.map(r=>r.teacher)).size}; });
-  const multi = per.length>=2;
-  const best = Math.max(...per.map(p=>p.s.avg));
+  return ys.map(y=>{
+    const rs = rows.filter(r=>yearOf(r.teacher)===y);
+    const names = [...new Set(rs.map(r=>r.teacher))];
+    const teachers = names.map(name=>{
+      const st = stats(rs.filter(r=>r.teacher===name));
+      const concern = st.avg<CONCERN_AVG || st.items.some(v=>v<=CONCERN_ITEM);
+      return {name, avg:st.avg, n:st.n, concern};
+    }).sort((a,b)=>a.avg-b.avg);
+    return {y, rs, s:stats(rs), teachers,
+      med: median(teachers.map(t=>t.avg)),
+      hit: teachers.filter(t=>t.avg>=TARGET).length,
+      concern: teachers.filter(t=>t.concern)};
+  });
+}
 
-  const cards = per.map((p,k)=>`
+function yearCompareHTML(){
+  const C = cohortData();
+  if(!C.length) return "";
+
+  /* A. 年度摘要卡 */
+  const cards = C.map(c=>`
     <div class="ycard">
-      <div class="ycard-top"><span class="swatch" style="background:${yearColor(p.y)}"></span>${esc(yearLabel(p.y))}完訓</div>
-      <div class="ycard-val">${f1(p.s.avg)}</div>
-      ${k>0?`<div class="ycard-chg">較前一年度 ${chgHTML(per[k-1].s.avg,p.s.avg)}</div>`:""}
-      <div class="ycard-sub">${p.t} 位教師・${p.s.n} 份回覆・滿意以上 ${pct(p.s.sat)}${multi&&p.s.avg===best?"・最高":""}</div>
+      <div class="ycard-top"><span class="swatch" style="background:${yearColor(c.y)}"></span>${esc(yearLabel(c.y))}完訓</div>
+      <div class="yc-grid">
+        <div><div class="yc-num">${c.teachers.length}</div><div class="yc-lbl">受評教師</div></div>
+        <div><div class="yc-num">${c.s.n}</div><div class="yc-lbl">回覆份數</div></div>
+        <div><div class="yc-num">${f1(c.med)}</div><div class="yc-lbl">教師中位數</div></div>
+        <div><div class="yc-num ${c.hit===c.teachers.length?"":"warn"}">${pct(c.hit/c.teachers.length)}</div><div class="yc-lbl">達標率（≥${TARGET}）</div></div>
+      </div>
+      <div class="yc-concern ${c.concern.length?"on":""}">${c.concern.length?`需關注 ${c.concern.length} 位：${c.concern.map(t=>esc(t.name)).join("、")}`:"無需關注教師"}</div>
     </div>`).join("");
 
-  // 列定義：整體、三構面、12 題項（依構面分組）
-  const lines = [{name:"整體平均", kind:"total", get:s=>s.avg}];
-  DIMS.forEach((d,di)=>{
-    lines.push({name:d.name, kind:"dim", get:s=>s.dims[di]});
-    d.idx.forEach(i=>lines.push({name:ITEMS[i], kind:"item", no:i+1, get:s=>s.items[i]}));
-  });
-  // 共同刻度：依資料最低值自動放大（點圖不需從 0 起算）
-  const allV = lines.flatMap(l=>per.map(p=>l.get(p.s))).filter(v=>!isNaN(v));
-  const lo = Math.max(1, Math.min(9, Math.floor((Math.min(...allV)-0.15)*2)/2)), hi = 10;
+  /* B. 教師個別分佈（每點一位教師） */
+  const allAvg = C.flatMap(c=>c.teachers.map(t=>t.avg));
+  const lo = Math.max(1, Math.min(8, Math.floor(Math.min(...allAvg)-0.3))), hi = 10;
   const pos = v => (v-lo)/(hi-lo)*100;
-  const tstep = (hi-lo)>3 ? 1 : 0.5;
-  let ticks=""; for(let v=lo; v<=hi+1e-9; v+=tstep) ticks+=`<span style="left:${pos(v)}%">${Number.isInteger(v)?v:v.toFixed(1)}</span>`;
-  let grid=""; for(let v=lo; v<=hi+1e-9; v+=tstep) grid+=`<i style="left:${pos(v)}%"></i>`;
+  let ticks="", grid="";
+  for(let v=lo; v<=hi; v++){ ticks+=`<span style="left:${pos(v)}%">${v}</span>`; grid+=`<i style="left:${pos(v)}%"></i>`; }
+  const tgt = `<u class="tgt" style="left:${pos(TARGET)}%"></u>`;
+  const swarm = C.map(c=>{
+    // 簡易蜂群排列：數值相近的點往上堆疊，避免重疊
+    const placed=[]; let maxLv=0;
+    const dots = c.teachers.map(t=>{
+      const x=pos(t.avg); let lv=0;
+      while(placed.some(p=>p.lv===lv && Math.abs(p.x-x)<2.6)) lv++;
+      placed.push({x,lv}); maxLv=Math.max(maxLv,lv);
+      return `<button type="button" class="tdot${t.concern?" concern":""}" data-teacher="${esc(t.name)}" style="left:${x}%;bottom:${8+lv*20}px" title="${esc(t.name)}：${f1(t.avg)}（${t.n} 份）"></button>`;
+    }).join("");
+    const h = Math.max(48, 30+maxLv*20+16);
+    return `<div class="sw-row">
+      <span class="sw-name"><span class="swatch" style="background:${yearColor(c.y)}"></span>${esc(yearLabel(c.y))}<small>${c.teachers.length} 位</small></span>
+      <span class="sw-plot" style="height:${h}px">${grid}${tgt}${dots}<s class="med" style="left:${pos(c.med)}%"><em>中位 ${f1(c.med)}</em></s></span>
+    </div>`;
+  }).join("");
 
-  const rowHTML = l => {
-    const vals = per.map(p=>l.get(p.s));
-    const ok = vals.filter(v=>!isNaN(v));
-    const mn=Math.min(...ok), mx=Math.max(...ok);
-    const dots = per.map((p,k)=>isNaN(vals[k])?"":`<b class="dot" style="left:${pos(vals[k])}%;background:${yearColor(p.y)}" title="${esc(yearLabel(p.y))}完訓：${f1(vals[k])}"></b>`).join("");
-    const link = ok.length>=2 ? `<em class="link" style="left:${pos(mn)}%;width:${pos(mx)-pos(mn)}%"></em>` : "";
-    const cells = per.map((p,k)=>`<span class="mv${multi&&vals[k]===mx&&mn!==mx?" top":""}">${f1(vals[k])}</span>`).join("");
-    const chg = multi ? `<span class="mchg">${chgHTML(vals[vals.length-2],vals[vals.length-1])}</span>` : "";
-    return `<div class="mrow ${l.kind}${l.kind==="item"?" item-r":""}">
-      <span class="mname">${l.kind==="item"?`<small>Q${String(l.no).padStart(2,"0")}</small>`:""}${esc(l.name)}</span>
-      <span class="strip">${grid}${link}${dots}</span>
-      <span class="mvals">${cells}${chg}</span>
+  /* C. 評分組成（100% 堆疊） */
+  const lbls = ["非常不滿意 1–2","不滿意 3–4","普通 5–6","滿意 7–8","非常滿意 9–10"];
+  const comp = C.map(c=>`
+    <div class="cp-row">
+      <span class="sw-name"><span class="swatch" style="background:${yearColor(c.y)}"></span>${esc(yearLabel(c.y))}</span>
+      <div class="dist">${[5,4,3,2,1].map(k=>{const v=c.s.dist[k-1];return v>0?`<div class="d${k}" style="width:${v*100}%" title="${lbls[k-1]} ${pct(v)}">${v>=.08?pct(v):""}</div>`:"";}).join("")}</div>
+    </div>`).join("");
+  const compLegend = `<div class="dist-legend">${[5,4,3,2,1].map(k=>`<span><i class="swatch d${k}"></i>${lbls[k-1]}</span>`).join("")}</div>`;
+
+  /* D. 各年度相對弱項（與同年度自身平均比較） */
+  const weak = C.map(c=>{
+    const rel = c.s.items.map((v,i)=>({i,v,d:v-c.s.avg})).sort((a,b)=>a.v-b.v).slice(0,3);
+    return `<div class="wk-card">
+      <div class="ycard-top"><span class="swatch" style="background:${yearColor(c.y)}"></span>${esc(yearLabel(c.y))}完訓<span class="wk-avg">年度平均 ${f1(c.s.avg)}</span></div>
+      <ol class="wk-list">${rel.map(o=>`<li><span class="wk-q">Q${String(o.i+1).padStart(2,"0")}</span><span class="wk-n">${esc(ITEMS[o.i])}</span><span class="wk-v">${f1(o.v)}</span><span class="wk-d">${o.d<-0.005?o.d.toFixed(2):"±0.00"}</span></li>`).join("")}</ol>
     </div>`;
-  };
-  const head = `<div class="mrow mhead">
-      <span class="mname">評核構面</span>
-      <span class="strip axis">${ticks}</span>
-      <span class="mvals">${per.map(p=>`<span class="mv"><i class="swatch" style="background:${yearColor(p.y)}"></i>${esc(p.y)}</span>`).join("")}${multi?`<span class="mchg">變化</span>`:""}</span>
-    </div>`;
-  const main = lines.filter(l=>l.kind!=="item").map(rowHTML).join("");
-  const items = lines.filter(l=>l.kind!=="total").map(rowHTML).join("");
-  const legend = `<div class="legend-row">${per.map(p=>`<span><i class="swatch" style="background:${yearColor(p.y)}"></i>${esc(yearLabel(p.y))}完訓</span>`).join("")}${multi?`<span class="lg-note">連接線 = 各年度差距；變化 = ${esc(per[per.length-1].y)} 與 ${esc(per[per.length-2].y)} 年度相比</span>`:""}</div>`;
+  }).join("");
+  const heat = `<div class="tbl-wrap"><table class="heat">
+      <thead><tr><th>題項</th>${C.map(c=>`<th class="r">${esc(yearLabel(c.y))}</th>`).join("")}</tr></thead>
+      <tbody>${ITEMS.map((it,i)=>`<tr><td><span class="wk-q">Q${String(i+1).padStart(2,"0")}</span>${esc(it)}</td>${C.map(c=>{
+        const d=c.s.items[i]-c.s.avg, a=Math.min(1,Math.max(0,-d/0.6));
+        return `<td class="r score" style="background:rgba(255,90,31,${(a*.75).toFixed(2)})" title="與該年度平均差 ${d.toFixed(2)}">${f1(c.s.items[i])}</td>`;}).join("")}</tr>`).join("")}</tbody>
+    </table></div>`;
 
   return `
     <section class="card">
-      <div class="card-head"><div class="card-no">01</div><h2>年度完訓教師滿意度比較<small>依教師完訓年度比較；不受上方「完訓年度」篩選影響，套用職級篩選</small></h2></div>
+      <div class="card-head"><div class="card-no">01</div><h2>各年度完訓教師表現概況<small>各年度為不同教師群組，僅供對照，不代表進步幅度；套用職級篩選</small></h2></div>
       <div class="year-cards">${cards}</div>
-      ${legend}
-      <div class="matrix" style="--cols:${per.length+(multi?1:0)}">${head}${main}</div>
-      <details class="mdetail">
-        <summary>展開 12 題項逐題比較</summary>
-        <div class="matrix" style="--cols:${per.length+(multi?1:0)}">${head}${items}</div>
+
+      <div class="sub-title">教師個別表現分佈<span>每個點代表一位教師的平均分數，點選可看明細</span></div>
+      <div class="legend-row">
+        <span><i class="tdot-lg"></i>教師</span><span><i class="tdot-lg concern"></i>需關注（平均 &lt; ${CONCERN_AVG}，或任一題 ≤ ${CONCERN_ITEM}）</span>
+        <span><i class="med-lg"></i>年度中位數</span><span><i class="tgt-lg"></i>達標線 ${TARGET} 分</span>
+      </div>
+      <div class="swarm">
+        <div class="sw-row sw-axis"><span class="sw-name"></span><span class="sw-plot axis">${ticks}</span></div>
+        ${swarm}
+      </div>
+
+      <div class="grid2" style="margin-top:28px">
+        <div>
+          <div class="sub-title">評分組成<span>全部題項評分的比例</span></div>
+          ${comp}${compLegend}
+        </div>
+        <div>
+          <div class="sub-title">相對弱項<span>各年度分數最低的 3 題（右欄 = 與該年度平均之差）</span></div>
+          <div class="wk-wrap">${weak}</div>
+        </div>
+      </div>
+      <details class="mdetail" style="margin-top:20px">
+        <summary>展開 12 題項熱度表</summary>
+        ${heat}
+        <div class="axis-note">顏色越深 = 該題低於同年度平均越多</div>
       </details>
-      <div class="axis-note">圓點位置 = 平均分數（刻度自 ${lo} 分起放大顯示，以便看出差異）；分數加底線 = 該列最高的年度</div>
-      ${multi?"":`<div class="axis-note">目前只有一個完訓年度有評核資料，新增其他年度教師並累積回覆後即可比較</div>`}
     </section>`;
 }
 
@@ -720,6 +820,8 @@ $("app").addEventListener("click",e=>{
   if(c){ state[c.dataset.grp]=c.dataset.val; render(); return; }
   const th=e.target.closest("th[data-sort]");
   if(th){ const k=th.dataset.sort; if(state.sortKey===k) state.sortDir*=-1; else {state.sortKey=k; state.sortDir=(k==="name"||k==="year")?1:-1;} render(); return; }
+  const td=e.target.closest(".tdot[data-teacher]");
+  if(td){ openDetail(td.dataset.teacher); return; }
   const tr=e.target.closest("tr[data-teacher]");
   if(tr) openDetail(tr.dataset.teacher);
 });
