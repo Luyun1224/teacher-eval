@@ -175,7 +175,8 @@ button{font:inherit;color:inherit}
 .wk-card{border:var(--line);border-radius:var(--r-md);background:#fff;padding:12px 14px}
 .wk-avg{margin-left:auto;font-size:12px;font-weight:700;color:var(--muted)}
 .wk-list{list-style:none;margin-top:8px}
-.wk-list li{display:grid;grid-template-columns:34px 1fr 44px 50px;gap:6px;align-items:center;padding:5px 0;border-top:1px solid #E6DCCB;font-size:13px;font-weight:700}
+.wk-ok{margin-top:8px;font-size:13px;font-weight:700;color:var(--muted)}
+.wk-list li{display:grid;grid-template-columns:34px 1fr 50px;gap:6px;align-items:center;padding:5px 0;border-top:1px solid #E6DCCB;font-size:13px;font-weight:700}
 .wk-list li:first-child{border-top:none}
 .wk-q{font-family:"Archivo Black",sans-serif;font-size:11px;color:var(--orange);margin-right:6px}
 .wk-v{font-family:"Archivo Black",sans-serif;text-align:right}
@@ -554,8 +555,8 @@ function chgHTML(a,b){
   return `<span class="chg ${cls}">${d>0.005?"▲":(d<-0.005?"▼":"＝")} ${Math.abs(d).toFixed(2)}</span>`;
 }
 
-/* 01 各年度完訓教師表現概況（各年度為不同教師群組，呈現分佈與達標，不做進步比較） */
-const TARGET = 9;        // 達標：教師個人平均 ≥ 9 分
+/* 01 各年度完訓教師表現概況（各年度為不同教師群組，呈現分佈，不做進步比較） */
+const FLAG = 9;          // 題項平均低於此分數才以橘色標示
 const CONCERN_AVG = 8;   // 需關注：個人平均 < 8 分
 const CONCERN_ITEM = 6;  // 或任一題平均 ≤ 6 分
 function median(a){ if(!a.length) return NaN; const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2?b[m]:(b[m-1]+b[m])/2; }
@@ -573,7 +574,6 @@ function cohortData(){
     }).sort((a,b)=>a.avg-b.avg);
     return {y, rs, s:stats(rs), teachers,
       med: median(teachers.map(t=>t.avg)),
-      hit: teachers.filter(t=>t.avg>=TARGET).length,
       concern: teachers.filter(t=>t.concern)};
   });
 }
@@ -590,7 +590,7 @@ function yearCompareHTML(){
         <div><div class="yc-num">${c.teachers.length}</div><div class="yc-lbl">受評教師</div></div>
         <div><div class="yc-num">${c.s.n}</div><div class="yc-lbl">回覆份數</div></div>
         <div><div class="yc-num">${f1(c.med)}</div><div class="yc-lbl">教師中位數</div></div>
-        <div><div class="yc-num ${c.hit===c.teachers.length?"":"warn"}">${pct(c.hit/c.teachers.length)}</div><div class="yc-lbl">達標率（≥${TARGET}）</div></div>
+        <div><div class="yc-num">${f1(c.s.avg)}</div><div class="yc-lbl">年度平均</div></div>
       </div>
       <div class="yc-concern ${c.concern.length?"on":""}">${c.concern.length?`需關注 ${c.concern.length} 位：${c.concern.map(t=>esc(t.name)).join("、")}`:"無需關注教師"}</div>
     </div>`).join("");
@@ -601,7 +601,6 @@ function yearCompareHTML(){
   const pos = v => (v-lo)/(hi-lo)*100;
   let ticks="", grid="";
   for(let v=lo; v<=hi; v++){ ticks+=`<span style="left:${pos(v)}%">${v}</span>`; grid+=`<i style="left:${pos(v)}%"></i>`; }
-  const tgt = `<u class="tgt" style="left:${pos(TARGET)}%"></u>`;
   const swarm = C.map(c=>{
     // 簡易蜂群排列：數值相近的點往上堆疊，避免重疊
     const placed=[]; let maxLv=0;
@@ -614,7 +613,7 @@ function yearCompareHTML(){
     const h = Math.max(48, 30+maxLv*20+16);
     return `<div class="sw-row">
       <span class="sw-name"><span class="swatch" style="background:${yearColor(c.y)}"></span>${esc(yearLabel(c.y))}<small>${c.teachers.length} 位</small></span>
-      <span class="sw-plot" style="height:${h}px">${grid}${tgt}${dots}<s class="med" style="left:${pos(c.med)}%"><em>中位 ${f1(c.med)}</em></s></span>
+      <span class="sw-plot" style="height:${h}px">${grid}${dots}<s class="med" style="left:${pos(c.med)}%"><em>中位 ${f1(c.med)}</em></s></span>
     </div>`;
   }).join("");
 
@@ -627,19 +626,21 @@ function yearCompareHTML(){
     </div>`).join("");
   const compLegend = `<div class="dist-legend">${[5,4,3,2,1].map(k=>`<span><i class="swatch d${k}"></i>${lbls[k-1]}</span>`).join("")}</div>`;
 
-  /* D. 各年度相對弱項（與同年度自身平均比較） */
+  /* D. 各年度低於 9 分的題項 */
   const weak = C.map(c=>{
-    const rel = c.s.items.map((v,i)=>({i,v,d:v-c.s.avg})).sort((a,b)=>a.v-b.v).slice(0,3);
+    const low = c.s.items.map((v,i)=>({i,v})).filter(o=>o.v<FLAG).sort((a,b)=>a.v-b.v);
     return `<div class="wk-card">
-      <div class="ycard-top"><span class="swatch" style="background:${yearColor(c.y)}"></span>${esc(yearLabel(c.y))}完訓<span class="wk-avg">年度平均 ${f1(c.s.avg)}</span></div>
-      <ol class="wk-list">${rel.map(o=>`<li><span class="wk-q">Q${String(o.i+1).padStart(2,"0")}</span><span class="wk-n">${esc(ITEMS[o.i])}</span><span class="wk-v">${f1(o.v)}</span><span class="wk-d">${o.d<-0.005?o.d.toFixed(2):"±0.00"}</span></li>`).join("")}</ol>
+      <div class="ycard-top"><span class="swatch" style="background:${yearColor(c.y)}"></span>${esc(yearLabel(c.y))}完訓</div>
+      ${low.length
+        ? `<ol class="wk-list">${low.map(o=>`<li><span class="wk-q">Q${String(o.i+1).padStart(2,"0")}</span><span class="wk-n">${esc(ITEMS[o.i])}</span><span class="wk-v">${f1(o.v)}</span></li>`).join("")}</ol>`
+        : `<div class="wk-ok">各題平均皆達 ${FLAG} 分以上</div>`}
     </div>`;
   }).join("");
   const heat = `<div class="tbl-wrap"><table class="heat">
       <thead><tr><th>題項</th>${C.map(c=>`<th class="r">${esc(yearLabel(c.y))}</th>`).join("")}</tr></thead>
       <tbody>${ITEMS.map((it,i)=>`<tr><td><span class="wk-q">Q${String(i+1).padStart(2,"0")}</span>${esc(it)}</td>${C.map(c=>{
-        const d=c.s.items[i]-c.s.avg, a=Math.min(1,Math.max(0,-d/0.6));
-        return `<td class="r score" style="background:rgba(255,90,31,${(a*.75).toFixed(2)})" title="與該年度平均差 ${d.toFixed(2)}">${f1(c.s.items[i])}</td>`;}).join("")}</tr>`).join("")}</tbody>
+        const v=c.s.items[i], a=v<FLAG ? 0.25+Math.min(1,(FLAG-v)/1.5)*0.6 : 0;
+        return `<td class="r score" style="${a?`background:rgba(255,90,31,${a.toFixed(2)})`:""}">${f1(v)}</td>`;}).join("")}</tr>`).join("")}</tbody>
     </table></div>`;
 
   return `
@@ -650,7 +651,7 @@ function yearCompareHTML(){
       <div class="sub-title">教師個別表現分佈<span>每個點代表一位教師的平均分數，點選可看明細</span></div>
       <div class="legend-row">
         <span><i class="tdot-lg"></i>教師</span><span><i class="tdot-lg concern"></i>需關注（平均 &lt; ${CONCERN_AVG}，或任一題 ≤ ${CONCERN_ITEM}）</span>
-        <span><i class="med-lg"></i>年度中位數</span><span><i class="tgt-lg"></i>達標線 ${TARGET} 分</span>
+        <span><i class="med-lg"></i>年度中位數</span>
       </div>
       <div class="swarm">
         <div class="sw-row sw-axis"><span class="sw-name"></span><span class="sw-plot axis">${ticks}</span></div>
@@ -663,14 +664,14 @@ function yearCompareHTML(){
           ${comp}${compLegend}
         </div>
         <div>
-          <div class="sub-title">相對弱項<span>各年度分數最低的 3 題（右欄 = 與該年度平均之差）</span></div>
+          <div class="sub-title">低於 ${FLAG} 分的題項<span>依各年度題項平均列出</span></div>
           <div class="wk-wrap">${weak}</div>
         </div>
       </div>
       <details class="mdetail" style="margin-top:20px">
         <summary>展開 12 題項熱度表</summary>
         ${heat}
-        <div class="axis-note">顏色越深 = 該題低於同年度平均越多</div>
+        <div class="axis-note">橘色底 = 該題平均低於 ${FLAG} 分（顏色越深分數越低）</div>
       </details>
     </section>`;
 }
@@ -678,8 +679,7 @@ function yearCompareHTML(){
 /* 02 題項與分佈 */
 function itemsHTML(s){
   if(!s.n) return `<section class="card"><div class="card-head"><div class="card-no">02</div><h2>題項表現</h2></div><div class="empty">此篩選條件下沒有資料</div></section>`;
-  const sorted = s.items.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);
-  const lows = new Set(sorted.slice(0,3).map(o=>o.i));
+  const lows = new Set(s.items.map((v,i)=>v<FLAG?i:-1).filter(i=>i>=0));
   const lbls = ["非常不滿意 1–2","不滿意 3–4","普通 5–6","滿意 7–8","非常滿意 9–10"];
   const dist = [5,4,3,2,1].map(k=>{const v=s.dist[k-1];return v>0?`<div class="d${k}" style="width:${v*100}%" title="${lbls[k-1]} ${pct(v)}">${v>=.07?pct(v):""}</div>`:"";}).join("");
   const legend = [5,4,3,2,1].map(k=>`<span><i class="swatch d${k}"></i>${lbls[k-1]} ${pct(s.dist[k-1])}</span>`).join("");
@@ -692,7 +692,7 @@ function itemsHTML(s){
   const items = ITEMS.map((name,i)=>`
     <div class="item-row">
       <span class="item-no">Q${String(i+1).padStart(2,"0")}</span>
-      <div><div class="item-name">${esc(name)}${lows.has(i)?'<span class="low">相對較低</span>':""}</div>
+      <div><div class="item-name">${esc(name)}${lows.has(i)?'<span class="low">低於 ${FLAG} 分</span>':""}</div>
         <div class="mini-track"><div class="mini-fill" style="width:${s.items[i]*10}%;${lows.has(i)?"background:var(--orange)":""}"></div></div></div>
       <span class="item-val">${f1(s.items[i])}</span>
     </div>`).join("");
@@ -708,7 +708,7 @@ function itemsHTML(s){
           ${dimsHtml}
         </div>
         <div>
-          <div class="dim-title">12 題項平均<span style="font-weight:500;font-size:12px;color:var(--muted)">（標示最低 3 題）</span></div>
+          <div class="dim-title">12 題項平均<span style="font-weight:500;font-size:12px;color:var(--muted)">（低於 ${FLAG} 分者以橘色標示）</span></div>
           ${items}
         </div>
       </div>
