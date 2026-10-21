@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>教師教學評估儀表板</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Archivo+Black&display=swap" rel="stylesheet">
+<style>
+:root{
+  --orange:#FF5A1F;
+  --orange-soft:#FFD9C7;
+  --navy:#0B1A3A;
+  --navy-2:#22325A;
+  --cream:#FFF4E2;
+  --paper:#FFFBF4;
+  --ink:#0B1A3A;
+  --muted:#5A6480;
+  --grey:#8A94B0;
+  --line:3px solid var(--navy);
+  --r-lg:28px;
+  --r-md:18px;
+  --pill:999px;
+  --shadow:5px 5px 0 var(--navy);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--cream);color:var(--ink);font-family:"Noto Sans TC","Microsoft JhengHei",sans-serif;line-height:1.6;min-height:100vh}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 80px}
+.num{font-family:"Archivo Black","Noto Sans TC",sans-serif}
+button{font:inherit;color:inherit}
+
+/* ---------- 頂部列 ---------- */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 0;border-bottom:var(--line);margin-bottom:24px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:15px;letter-spacing:.04em}
+.brand-dot{width:28px;height:28px;border-radius:50%;background:var(--orange);border:var(--line);flex:none}
+.top-actions{display:flex;gap:10px;align-items:center}
+.btn{
+  font-weight:900;font-size:15px;letter-spacing:.04em;
+  background:var(--navy);color:var(--cream);border:var(--line);border-radius:var(--pill);
+  padding:9px 22px;cursor:pointer;transition:transform .08s;white-space:nowrap;
+}
+.btn:hover{background:var(--navy-2)}
+.btn:active{transform:translate(2px,2px)}
+.btn.ghost{background:var(--paper);color:var(--navy)}
+.btn.ghost:hover{background:var(--orange-soft)}
+.btn.orange{background:var(--orange);color:var(--navy)}
+.btn.sm{padding:5px 14px;font-size:13px;border-width:2px}
+.btn[disabled]{opacity:.55;cursor:wait}
+.admin-badge{font-size:12px;font-weight:900;border:2px solid var(--navy);border-radius:var(--pill);padding:3px 12px;background:var(--orange)}
+
+/* ---------- Hero ---------- */
+.hero{background:var(--navy);color:var(--cream);border:var(--line);border-radius:var(--r-lg);padding:32px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.hero-kicker{display:inline-block;background:var(--orange);color:var(--navy);font-family:"Archivo Black","Noto Sans TC",sans-serif;font-size:12px;letter-spacing:.14em;padding:5px 14px;border-radius:var(--pill);border:2px solid var(--cream);margin-bottom:16px}
+.hero h1{font-weight:900;font-size:clamp(30px,5.4vw,52px);line-height:1.15}
+.hero h1 .hl{color:var(--orange)}
+.nw{white-space:nowrap;display:inline-block}
+.hero p{margin-top:12px;font-size:14px;color:#D8DDEA}
+.hero-circle{position:absolute;right:-50px;top:-50px;width:180px;height:180px;border-radius:50%;background:var(--orange);border:3px solid var(--cream)}
+.hero-foot{display:flex;align-items:center;gap:12px;margin-top:20px;flex-wrap:wrap}
+.hero-foot .btn{border-color:var(--cream)}
+.updated{font-size:13px;font-weight:700;color:#D8DDEA}
+
+/* ---------- 篩選列 ---------- */
+.filters{position:sticky;top:0;z-index:20;background:var(--cream);border-bottom:var(--line);padding:14px 0;margin:24px 0 0;display:flex;flex-direction:column;gap:10px}
+.frow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.flabel{font-weight:900;font-size:14px;width:72px;flex:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-weight:900;font-size:14px;border:var(--line);border-radius:var(--pill);padding:4px 16px;background:#fff;cursor:pointer}
+.chip.on{background:var(--navy);color:var(--cream)}
+.chip:active{transform:translate(2px,2px)}
+
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:24px}
+.kpi{background:var(--paper);border:var(--line);border-radius:var(--r-lg);padding:20px 22px}
+.kpi.accent{background:var(--orange)}
+.kpi-lbl{font-weight:900;font-size:14px}
+.kpi-val{font-family:"Archivo Black",sans-serif;font-size:40px;line-height:1.1;margin-top:8px}
+.kpi-val small{font-size:16px;margin-left:4px}
+.kpi-sub{font-size:13px;font-weight:700;color:var(--muted);margin-top:4px}
+.kpi.accent .kpi-sub{color:var(--navy)}
+
+/* ---------- 卡片 ---------- */
+.card{background:var(--paper);border:var(--line);border-radius:var(--r-lg);padding:26px;margin-top:24px}
+.card-head{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+.card-no{flex:none;width:48px;height:48px;border-radius:50%;background:var(--orange);border:var(--line);display:flex;align-items:center;justify-content:center;font-family:"Archivo Black",sans-serif;font-size:18px}
+.card-head h2{font-weight:900;font-size:22px;line-height:1.25;flex:1;min-width:180px}
+.card-head h2 small{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.empty{padding:28px;text-align:center;font-weight:700;color:var(--muted);border:2px dashed var(--navy);border-radius:var(--r-md)}
+
+/* 年度比較 */
+.year-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.ycard{border:var(--line);border-radius:var(--r-md);padding:14px 16px;background:#fff}
+.ycard-top{display:flex;align-items:center;gap:8px;font-weight:900;font-size:15px}
+.swatch{width:16px;height:16px;border-radius:50%;border:2px solid var(--navy);flex:none}
+.ycard-val{font-family:"Archivo Black",sans-serif;font-size:34px;line-height:1.15;margin-top:6px}
+.ycard-sub{font-size:12px;font-weight:700;color:var(--muted)}
+.dim-group{padding:14px 0;border-top:2px dashed var(--navy)}
+.dim-group:first-of-type{border-top:none;padding-top:0}
+.dim-title{font-weight:900;font-size:15px;margin-bottom:8px}
+.bar-row{display:grid;grid-template-columns:96px 1fr 52px;align-items:center;gap:10px;margin:6px 0}
+.bar-lbl{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{height:22px;border:2px solid var(--navy);border-radius:var(--pill);background:#fff;overflow:hidden}
+.bar-fill{height:100%;border-right:2px solid var(--navy);border-radius:var(--pill)}
+.bar-val{font-family:"Archivo Black",sans-serif;font-size:15px;text-align:right}
+.axis-note{font-size:12px;font-weight:700;color:var(--muted);margin-top:10px}
+
+/* 題項 */
+.item-row{display:grid;grid-template-columns:28px 1fr 60px;gap:10px;align-items:center;padding:7px 0}
+.item-row + .item-row{border-top:1px solid #E6DCCB}
+.item-no{font-family:"Archivo Black",sans-serif;font-size:12px;color:var(--orange)}
+.item-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.item-name .low{font-size:11px;font-weight:900;background:var(--orange);border:2px solid var(--navy);border-radius:var(--pill);padding:0 8px;margin-left:6px;vertical-align:2px}
+.item-val{font-family:"Archivo Black",sans-serif;font-size:17px;text-align:right}
+.mini-track{height:12px;border:2px solid var(--navy);border-radius:var(--pill);background:#fff;overflow:hidden}
+.mini-fill{height:100%;background:var(--navy)}
+
+/* 分佈 */
+.dist{display:flex;height:42px;border:var(--line);border-radius:var(--pill);overflow:hidden;background:#fff}
+.dist div{display:flex;align-items:center;justify-content:center;font-family:"Archivo Black",sans-serif;font-size:13px;min-width:0;overflow:hidden;white-space:nowrap}
+.dist div + div{border-left:2px solid var(--navy)}
+.dist-legend{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;font-size:13px;font-weight:700}
+.dist-legend span{display:inline-flex;align-items:center;gap:6px}
+.d5{background:var(--orange)}.d4{background:var(--orange-soft)}.d3{background:var(--cream)}.d2{background:#C9CEDB}.d1{background:var(--navy);color:var(--cream)}
+
+/* 表格 */
+.table-tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.search{flex:1;min-width:200px;font:inherit;font-size:15px;font-weight:500;border:var(--line);border-radius:var(--pill);padding:8px 18px;background:#fff;outline:none}
+.search:focus{background:var(--orange-soft)}
+.tbl-wrap{overflow-x:auto;border:var(--line);border-radius:var(--r-md);background:#fff}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th,td{padding:11px 14px;text-align:left;font-size:14px;white-space:nowrap}
+th{background:var(--navy);color:var(--cream);font-weight:900;cursor:pointer;user-select:none}
+th.r,td.r{text-align:right}
+th .arr{font-size:11px;margin-left:4px;opacity:.6}
+tbody tr{border-top:2px solid var(--navy);cursor:pointer}
+tbody tr:hover{background:var(--orange-soft)}
+td.name{font-weight:900}
+.score{font-family:"Archivo Black",sans-serif}
+.score.lo{color:var(--orange)}
+.tag{display:inline-block;font-size:11px;font-weight:900;border:2px solid var(--navy);border-radius:var(--pill);padding:0 8px;margin-left:6px;background:var(--cream)}
+.tag.warn{background:var(--orange-soft)}
+
+/* 質性回饋 */
+.comments{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.cmt{border:var(--line);border-radius:var(--r-md);padding:14px 16px;background:#fff}
+.cmt-text{font-weight:700;font-size:15px}
+.cmt-meta{font-size:12px;font-weight:700;color:var(--muted);margin-top:8px}
+
+/* ---------- 管理面板 ---------- */
+.admin{display:none;background:var(--orange);border:var(--line);border-radius:var(--r-lg);padding:26px;margin-bottom:24px;box-shadow:var(--shadow)}
+.admin.show{display:block}
+.admin .card-no{background:var(--navy);color:var(--cream)}
+.admin .card-head h2 small{color:var(--navy)}
+.add-form{display:grid;grid-template-columns:1.2fr .7fr 1.4fr auto;gap:12px;align-items:end;background:var(--paper);border:var(--line);border-radius:var(--r-md);padding:16px}
+.fld label{display:block;font-weight:900;font-size:13px;margin-bottom:4px}
+.inp{width:100%;font:inherit;font-size:15px;font-weight:500;border:var(--line);border-radius:var(--pill);padding:8px 16px;background:#fff;outline:none;color:var(--ink)}
+.inp:focus{background:var(--orange-soft)}
+.admin-list{margin-top:16px}
+.admin-list .tbl-wrap{background:var(--paper)}
+.admin-list table{min-width:620px}
+.admin-list tbody tr{cursor:default}
+.admin-list tbody tr:hover{background:transparent}
+.admin-list tr.hidden-row td{color:var(--muted)}
+.toggle{display:inline-flex;border:2px solid var(--navy);border-radius:var(--pill);overflow:hidden}
+.toggle button{border:none;background:#fff;padding:3px 12px;font-size:12px;font-weight:900;cursor:pointer}
+.toggle button.on{background:var(--navy);color:var(--cream)}
+.year-inp{width:76px;font:inherit;font-family:"Archivo Black",sans-serif;font-size:14px;border:2px solid var(--navy);border-radius:var(--pill);padding:3px 10px;text-align:center;background:#fff}
+
+/* ---------- Modal ---------- */
+.modal{position:fixed;inset:0;background:rgba(11,26,58,.55);z-index:60;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto}
+.modal.show{display:flex}
+.modal-box{background:var(--paper);border:var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow);width:100%;max-width:440px;padding:26px}
+.modal-box.wide{max-width:820px}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.modal-head h3{font-weight:900;font-size:24px;line-height:1.25}
+.modal-head h3 small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+.x{width:40px;height:40px;flex:none;border:var(--line);border-radius:50%;background:#fff;font-weight:900;font-size:18px;cursor:pointer}
+.login-err{color:var(--orange);font-weight:900;font-size:13px;margin-top:8px;min-height:20px}
+.detail-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.detail-kpis .kpi{padding:14px 16px;border-radius:var(--r-md)}
+.detail-kpis .kpi-val{font-size:28px}
+.cmp-row{display:grid;grid-template-columns:1fr 160px 48px;gap:10px;align-items:center;padding:6px 0;font-size:14px;font-weight:700}
+.cmp-row + .cmp-row{border-top:1px solid #E6DCCB}
+.cmp-track{position:relative;height:16px;border:2px solid var(--navy);border-radius:var(--pill);background:#fff}
+.cmp-fill{position:absolute;left:0;top:0;bottom:0;background:var(--orange);border-radius:var(--pill)}
+.cmp-mark{position:absolute;top:-5px;bottom:-5px;width:3px;background:var(--navy)}
+.sec-title{font-weight:900;font-size:16px;margin:20px 0 10px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(140%);visibility:hidden;background:var(--navy);color:var(--cream);border:3px solid var(--orange);border-radius:var(--pill);padding:12px 24px;font-weight:900;font-size:15px;z-index:80;transition:transform .25s;max-width:calc(100% - 32px);text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0);visibility:visible}
+.loading{padding:60px 0;text-align:center;font-weight:900;font-size:18px}
+footer{margin-top:40px;padding-top:16px;border-top:var(--line);font-size:14px;font-weight:900;text-align:center;letter-spacing:.04em}
+
+@media (max-width:900px){
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .grid2{grid-template-columns:1fr}
+  .add-form{grid-template-columns:1fr 1fr}
+  .add-form .btn{grid-column:1/-1}
+}
+@media (max-width:600px){
+  .hero{padding:26px 20px}
+  .hero-circle{width:120px;height:120px;right:-44px;top:-44px}
+  .card,.admin{padding:20px 16px}
+  .kpis{gap:10px}
+  .kpi{padding:14px}
+  .kpi-val{font-size:30px}
+  .flabel{width:100%}
+  .bar-row{grid-template-columns:72px 1fr 44px}
+  .add-form{grid-template-columns:1fr}
+  .detail-kpis{grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .detail-kpis .kpi-val{font-size:22px}
+  .cmp-row{grid-template-columns:1fr 44px;row-gap:4px}
+  .cmp-row > span:first-child{grid-column:1/-1}
+  .detail-kpis .kpi{padding:10px}
+  .detail-kpis .kpi-lbl{font-size:12px}
+  .modal{padding:16px 10px}
+  .modal-box{padding:20px 16px}
+  .brand{font-size:13px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand"><span class="brand-dot"></span>奇美醫院教學部｜一般醫學內科訓練示範中心</div>
+    <div class="top-actions" id="topActions"></div>
+  </header>
+
+  <!-- 管理面板（登入後顯示） -->
+  <section class="admin" id="adminPanel">
+    <div class="card-head">
+      <div class="card-no">⚙</div>
+      <h2>完訓教師名單管理<small>新增後即出現在問卷下拉選單，依完訓年度分組</small></h2>
+      <button class="btn ghost sm" id="closeAdmin" type="button">收合</button>
+    </div>
+    <form class="add-form" id="addForm" autocomplete="off">
+      <div class="fld"><label for="newName">教師姓名</label><input class="inp" id="newName" placeholder="例如：王小明" maxlength="50"></div>
+      <div class="fld"><label for="newYear">完訓年度（民國）</label><input class="inp num" id="newYear" inputmode="numeric" maxlength="3"></div>
+      <div class="fld"><label for="newNote">備註（選填）</label><input class="inp" id="newNote" placeholder="例如：一般內科" maxlength="200"></div>
+      <button class="btn" type="submit" id="addBtn">＋ 新增教師</button>
+    </form>
+    <div class="admin-list">
+      <div class="table-tools" style="margin-top:4px">
+        <div class="chips" id="adminYearChips"></div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>教師姓名</th><th>完訓年度</th><th class="r">回覆數</th><th>問卷顯示</th><th>備註</th><th></th></tr></thead>
+          <tbody id="adminTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero">
+    <div class="hero-circle"></div>
+    <span class="hero-kicker">DASHBOARD・成效分析</span>
+    <h1><span class="nw">完訓教師</span><span class="nw"><span class="hl">教學評估</span>儀表板</span></h1>
+    <p>彙整學員對完訓教師之 12 項教學評估（1–10 分），依完訓年度比較教學滿意度。</p>
+    <div class="hero-foot">
+      <button class="btn orange sm" id="refreshBtn" type="button">↻ 重新整理資料</button>
+      <span class="updated" id="updated"></span>
+    </div>
+  </section>
+
+  <div id="app"><div class="loading">資料載入中…</div></div>
+
+  <footer>奇美醫院教學部｜一般醫學內科訓練示範中心</footer>
+</div>
+
+<!-- 登入 -->
+<div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="loginTitle">管理者登入<small>登入後可維護完訓教師名單</small></h3>
+      <button class="x" type="button" data-close>✕</button>
+    </div>
+    <form id="loginForm">
+      <div class="fld"><label for="pwd">管理者密碼</label><input class="inp" type="password" id="pwd" autocomplete="current-password"></div>
+      <div class="login-err" id="loginErr"></div>
+      <button class="btn" type="submit" id="loginBtn" style="width:100%">登入</button>
+    </form>
+  </div>
+</div>
+
+<!-- 教師明細 -->
+<div class="modal" id="detailModal" role="dialog" aria-modal="true">
+  <div class="modal-box wide" id="detailBox"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== 設定 ===================== */
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxz_0YHJ1beujwlQb7bdcMt38wF77BiXdAdJzbOoFvj2WWDdYPHR1nzCagAkNM3gn-g/exec";
+const DEMO = new URLSearchParams(location.search).has("demo");   // 網址加 ?demo 可用示範資料預覽
+
+const DIMS = [
+  {name:"教學內容與組織", idx:[0,1,2,3,4,5]},
+  {name:"教學互動與參與", idx:[6,7,8]},
+  {name:"回饋與問題解決", idx:[9,10,11]}
+];
+const RANKS = ["UGY","PGY1","PGY2","Resident"];
+const YEAR_COLORS = ["#FF5A1F","#0B1A3A","#8A94B0","#FFB38A","#3D5A99","#C9CEDB"];
+const LOW_N = 3;   // 回覆數低於此值標示「樣本少」
+const CUR_ROC = new Date().getFullYear() - 1911;
+
+/* ===================== 狀態 ===================== */
+let ITEMS = [], TEACHERS = [], RESPONSES = [];
+const state = { year:"all", rank:"all", q:"", sortKey:"avg", sortDir:-1, adminYear:"all" };
+let token = null;
+try{ token = sessionStorage.getItem("tes_token"); }catch(e){}
+
+const $ = id => document.getElementById(id);
+const esc = t => String(t ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : NaN;
+const f1 = v => isNaN(v) ? "—" : v.toFixed(2);
+const pct = v => isNaN(v) ? "—" : Math.round(v*100)+"%";
+function toast(msg){const el=$("toast");el.textContent=msg;el.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove("show"),2800);}
+
+/* ===================== API ===================== */
+async function apiGet(action){
+  const r = await fetch(GAS_URL+"?action="+action);
+  const d = await r.json(); if(!d.ok) throw new Error(d.error||"讀取失敗"); return d;
+}
+async function apiPost(body){
+  if(DEMO) return demoPost(body);
+  const r = await fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
+  const d = await r.json();
+  if(!d.ok){
+    if(/逾時/.test(d.error||"")) setToken(null);
+    throw new Error(d.error||"操作失敗");
+  }
+  return d;
+}
+
+async function load(){
+  $("refreshBtn").disabled = true;
+  try{
+    const d = DEMO ? demoData() : await apiGet("dashboard");
+    ITEMS = d.items; TEACHERS = d.teachers; RESPONSES = d.responses;
+    const now = new Date();
+    $("updated").textContent = (DEMO?"示範資料・":"")+"更新於 "+now.toLocaleString("zh-TW",{hour12:false});
+    render(); renderAdmin();
+  }catch(err){
+    $("app").innerHTML = `<div class="card"><div class="empty">資料載入失敗：${esc(err.message)}<br>請確認 GAS 已部署新版本，且存取權為「所有人」。</div></div>`;
+  }finally{ $("refreshBtn").disabled = false; }
+}
+
+/* ===================== 資料處理 ===================== */
+function yearOf(name){ const t=TEACHERS.find(t=>t.name===name); return t ? (t.year||"未填") : "未列名單"; }
+function yearsAll(){
+  const ys = new Set(TEACHERS.map(t=>t.year||"未填"));
+  RESPONSES.forEach(r=>ys.add(yearOf(r.teacher)));
+  return [...ys].sort((a,b)=>(+a||9999)-(+b||9999));
+}
+function yearLabel(y){ return /^\d+$/.test(y) ? y+" 年度" : y; }
+function yearColor(y){ const ys=yearsAll(); return YEAR_COLORS[ys.indexOf(y)%YEAR_COLORS.length]; }
+function rowsFiltered(useYear=true){
+  return RESPONSES.filter(r=>
+    (state.rank==="all"||r.rank===state.rank) &&
+    (!useYear||state.year==="all"||yearOf(r.teacher)===state.year));
+}
+function stats(rows){
+  const all = rows.flatMap(r=>r.scores);
+  return {
+    n: rows.length,
+    avg: mean(all),
+    sat: all.length ? all.filter(s=>s>=7).length/all.length : NaN,
+    vsat: all.length ? all.filter(s=>s>=9).length/all.length : NaN,
+    items: ITEMS.map((_,i)=>mean(rows.map(r=>r.scores[i]))),
+    dims: DIMS.map(d=>mean(rows.flatMap(r=>d.idx.map(i=>r.scores[i])))),
+    teachers: new Set(rows.map(r=>r.teacher)).size,
+    dist: [1,2,3,4,5].map(k=>all.filter(s=>Math.ceil(s/2)===k).length/(all.length||1)),
+    all
+  };
+}
+
+/* ===================== 繪製 ===================== */
+function render(){
+  const years = yearsAll();
+  if(state.year!=="all" && !years.includes(state.year)) state.year="all";
+  const rows = rowsFiltered();
+  const s = stats(rows);
+
+  const chip = (grp,val,label,on) => `<button class="chip${on?" on":""}" data-grp="${grp}" data-val="${esc(val)}" type="button">${esc(label)}</button>`;
+  const filters = `
+    <div class="filters">
+      <div class="frow"><span class="flabel">完訓年度</span><div class="chips">
+        ${chip("year","all","全部",state.year==="all")}${years.map(y=>chip("year",y,yearLabel(y),state.year===y)).join("")}
+      </div></div>
+      <div class="frow"><span class="flabel">填答職級</span><div class="chips">
+        ${chip("rank","all","全部",state.rank==="all")}${RANKS.map(r=>chip("rank",r,r,state.rank===r)).join("")}
+      </div></div>
+    </div>`;
+
+  const kpis = `
+    <div class="kpis">
+      <div class="kpi"><div class="kpi-lbl">回覆份數</div><div class="kpi-val">${s.n}<small>份</small></div><div class="kpi-sub">依目前篩選條件</div></div>
+      <div class="kpi"><div class="kpi-lbl">受評教師</div><div class="kpi-val">${s.teachers}<small>位</small></div><div class="kpi-sub">名單共 ${TEACHERS.filter(t=>state.year==="all"||(t.year||"未填")===state.year).length} 位</div></div>
+      <div class="kpi accent"><div class="kpi-lbl">整體平均</div><div class="kpi-val">${f1(s.avg)}<small>/10</small></div><div class="kpi-sub">12 題項平均</div></div>
+      <div class="kpi"><div class="kpi-lbl">滿意以上比例</div><div class="kpi-val">${pct(s.sat)}</div><div class="kpi-sub">7 分以上；非常滿意 ${pct(s.vsat)}</div></div>
+    </div>`;
+
+  $("app").innerHTML = filters + kpis +
+    (RESPONSES.length ? yearCompareHTML() + itemsHTML(s) + teacherTableHTML() + commentsHTML(rows)
+                      : `<div class="card"><div class="empty">目前尚無問卷回覆資料</div></div>`);
+  bindTable();
+}
+
+/* 01 年度比較（不受「完訓年度」篩選影響，只受職級篩選） */
+function yearCompareHTML(){
+  const rows = rowsFiltered(false);
+  const ys = yearsAll().filter(y=>rows.some(r=>yearOf(r.teacher)===y));
+  if(!ys.length) return "";
+  const per = ys.map(y=>{ const rs=rows.filter(r=>yearOf(r.teacher)===y); return {y, s:stats(rs), t:new Set(rs.map(r=>r.teacher)).size}; });
+  const best = Math.max(...per.map(p=>p.s.avg));
+  const cards = per.map(p=>`
+    <div class="ycard">
+      <div class="ycard-top"><span class="swatch" style="background:${yearColor(p.y)}"></span>${esc(yearLabel(p.y))}完訓</div>
+      <div class="ycard-val">${f1(p.s.avg)}</div>
+      <div class="ycard-sub">${p.t} 位教師・${p.s.n} 份回覆・滿意以上 ${pct(p.s.sat)}${p.s.avg===best&&per.length>1?"・最高":""}</div>
+    </div>`).join("");
+  const groups = [{name:"整體平均", get:p=>p.s.avg}].concat(DIMS.map((d,i)=>({name:d.name, get:p=>p.s.dims[i]})))
+    .map(g=>`
+      <div class="dim-group">
+        <div class="dim-title">${g.name}</div>
+        ${per.map(p=>{const v=g.get(p);return `
+          <div class="bar-row">
+            <span class="bar-lbl">${esc(yearLabel(p.y))}</span>
+            <div class="bar-track"><div class="bar-fill" style="width:${isNaN(v)?0:v*10}%;background:${yearColor(p.y)}"></div></div>
+            <span class="bar-val">${f1(v)}</span>
+          </div>`;}).join("")}
+      </div>`).join("");
+  return `
+    <section class="card">
+      <div class="card-head"><div class="card-no">01</div><h2>年度完訓教師滿意度比較<small>各完訓年度教師所獲評分（不受上方「完訓年度」篩選影響）</small></h2></div>
+      <div class="year-cards">${cards}</div>
+      ${groups}
+      <div class="axis-note">長條滿格 = 10 分</div>
+    </section>`;
+}
+
+/* 02 題項與分佈 */
+function itemsHTML(s){
+  if(!s.n) return `<section class="card"><div class="card-head"><div class="card-no">02</div><h2>題項表現</h2></div><div class="empty">此篩選條件下沒有資料</div></section>`;
+  const sorted = s.items.map((v,i)=>({v,i})).sort((a,b)=>a.v-b.v);
+  const lows = new Set(sorted.slice(0,3).map(o=>o.i));
+  const lbls = ["非常不滿意 1–2","不滿意 3–4","普通 5–6","滿意 7–8","非常滿意 9–10"];
+  const dist = [5,4,3,2,1].map(k=>{const v=s.dist[k-1];return v>0?`<div class="d${k}" style="width:${v*100}%" title="${lbls[k-1]} ${pct(v)}">${v>=.07?pct(v):""}</div>`:"";}).join("");
+  const legend = [5,4,3,2,1].map(k=>`<span><i class="swatch d${k}"></i>${lbls[k-1]} ${pct(s.dist[k-1])}</span>`).join("");
+  let dimsHtml = DIMS.map((d,i)=>`
+    <div class="bar-row" style="grid-template-columns:130px 1fr 52px">
+      <span class="bar-lbl">${d.name}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${s.dims[i]*10}%;background:var(--navy)"></div></div>
+      <span class="bar-val">${f1(s.dims[i])}</span>
+    </div>`).join("");
+  const items = ITEMS.map((name,i)=>`
+    <div class="item-row">
+      <span class="item-no">Q${String(i+1).padStart(2,"0")}</span>
+      <div><div class="item-name">${esc(name)}${lows.has(i)?'<span class="low">相對較低</span>':""}</div>
+        <div class="mini-track"><div class="mini-fill" style="width:${s.items[i]*10}%;${lows.has(i)?"background:var(--orange)":""}"></div></div></div>
+      <span class="item-val">${f1(s.items[i])}</span>
+    </div>`).join("");
+  return `
+    <section class="card">
+      <div class="card-head"><div class="card-no">02</div><h2>題項表現<small>${state.year==="all"?"全部完訓年度":esc(yearLabel(state.year))+"完訓"}・${state.rank==="all"?"全部職級":esc(state.rank)}</small></h2></div>
+      <div class="grid2">
+        <div>
+          <div class="dim-title">評分分佈（全部題項）</div>
+          <div class="dist">${dist}</div>
+          <div class="dist-legend">${legend}</div>
+          <div class="dim-title" style="margin-top:24px">三大構面平均</div>
+          ${dimsHtml}
+        </div>
+        <div>
+          <div class="dim-title">12 題項平均<span style="font-weight:500;font-size:12px;color:var(--muted)">（標示最低 3 題）</span></div>
+          ${items}
+        </div>
+      </div>
+    </section>`;
+}
+
+/* 03 教師一覽 */
+function teacherRows(){
+  const rows = rowsFiltered();
+  const names = new Set(rows.map(r=>r.teacher));
+  // 也列出名單中尚無回覆的教師
+  TEACHERS.forEach(t=>{ if(state.year==="all"||(t.year||"未填")===state.year) names.add(t.name); });
+  let list = [...names].map(name=>{
+    const rs = rows.filter(r=>r.teacher===name), s = stats(rs);
+    const lowI = rs.length ? s.items.indexOf(Math.min(...s.items)) : -1;
+    return {name, year:yearOf(name), n:rs.length, avg:s.avg, d0:s.dims[0], d1:s.dims[1], d2:s.dims[2], low: lowI>=0?ITEMS[lowI]:"", lowV: lowI>=0?s.items[lowI]:NaN};
+  });
+  if(state.q) list = list.filter(t=>t.name.includes(state.q));
+  const k=state.sortKey, dir=state.sortDir;
+  list.sort((a,b)=>{
+    const va=a[k], vb=b[k];
+    if(typeof va==="string") return dir*va.localeCompare(vb,"zh-Hant");
+    const na=isNaN(va)?-1:va, nb=isNaN(vb)?-1:vb; return dir*(na-nb);
+  });
+  return list;
+}
+function teacherTableHTML(){
+  const list = teacherRows();
+  const overall = stats(rowsFiltered()).avg;
+  const th = (k,label,r) => `<th class="${r?"r":""}" data-sort="${k}">${label}<span class="arr">${state.sortKey===k?(state.sortDir>0?"▲":"▼"):"↕"}</span></th>`;
+  const body = list.map(t=>`
+    <tr data-teacher="${esc(t.name)}">
+      <td class="name">${esc(t.name)}${t.n&&t.n<LOW_N?'<span class="tag warn">樣本少</span>':""}${!t.n?'<span class="tag">尚無回覆</span>':""}</td>
+      <td>${esc(yearLabel(t.year))}</td>
+      <td class="r score">${t.n}</td>
+      <td class="r score ${t.avg<overall-0.3?"lo":""}">${f1(t.avg)}</td>
+      <td class="r score">${f1(t.d0)}</td>
+      <td class="r score">${f1(t.d1)}</td>
+      <td class="r score">${f1(t.d2)}</td>
+      <td>${t.low?esc(t.low)+` <span class="score">${f1(t.lowV)}</span>`:"—"}</td>
+    </tr>`).join("");
+  return `
+    <section class="card">
+      <div class="card-head"><div class="card-no">03</div><h2>受評教師一覽<small>點選教師可查看 12 題項明細與學員回饋；橘色分數 = 低於整體平均 0.3 分以上</small></h2></div>
+      <div class="table-tools"><input class="search" id="search" placeholder="搜尋教師姓名" value="${esc(state.q)}"></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr>${th("name","教師")}${th("year","完訓年度")}${th("n","回覆數",1)}${th("avg","整體平均",1)}${th("d0","內容組織",1)}${th("d1","互動參與",1)}${th("d2","回饋解決",1)}${th("lowV","最低題項")}</tr></thead>
+        <tbody>${body||`<tr><td colspan="8" style="text-align:center;color:var(--muted)">找不到符合的教師</td></tr>`}</tbody>
+      </table></div>
+    </section>`;
+}
+
+/* 04 質性回饋 */
+function commentsHTML(rows){
+  const cs = rows.filter(r=>r.comment && r.comment.trim()).sort((a,b)=>b.time.localeCompare(a.time));
+  return `
+    <section class="card">
+      <div class="card-head"><div class="card-no">04</div><h2>學員建議及回饋<small>共 ${cs.length} 則</small></h2></div>
+      ${cs.length ? `<div class="comments">${cs.map(c=>`
+        <div class="cmt"><div class="cmt-text">${esc(c.comment)}</div>
+        <div class="cmt-meta">${esc(c.teacher)} 老師・${esc(c.rank)}・${esc(c.time.slice(0,10))}</div></div>`).join("")}</div>`
+      : `<div class="empty">此篩選條件下沒有文字回饋</div>`}
+    </section>`;
+}
+
+/* 教師明細 */
+function openDetail(name){
+  const rows = rowsFiltered(false).filter(r=>r.teacher===name);
+  const s = stats(rows), base = stats(rowsFiltered(false));
+  const rankCnt = RANKS.map(r=>[r,rows.filter(x=>x.rank===r).length]).filter(x=>x[1]);
+  const cmp = ITEMS.map((it,i)=>`
+    <div class="cmp-row"><span>${esc(it)}</span>
+      <div class="cmp-track"><div class="cmp-fill" style="width:${(s.items[i]||0)*10}%"></div><div class="cmp-mark" style="left:calc(${base.items[i]*10}% - 1px)" title="全體平均 ${f1(base.items[i])}"></div></div>
+      <span class="score" style="text-align:right">${f1(s.items[i])}</span></div>`).join("");
+  const cs = rows.filter(r=>r.comment&&r.comment.trim());
+  $("detailBox").innerHTML = `
+    <div class="modal-head"><h3>${esc(name)} 老師<small>${esc(yearLabel(yearOf(name)))}完訓・職級篩選：${state.rank==="all"?"全部":esc(state.rank)}</small></h3><button class="x" type="button" data-close>✕</button></div>
+    ${rows.length?`
+    <div class="detail-kpis">
+      <div class="kpi accent"><div class="kpi-lbl">整體平均</div><div class="kpi-val">${f1(s.avg)}</div></div>
+      <div class="kpi"><div class="kpi-lbl">回覆數</div><div class="kpi-val">${s.n}</div></div>
+      <div class="kpi"><div class="kpi-lbl">滿意以上</div><div class="kpi-val">${pct(s.sat)}</div></div>
+    </div>
+    <div class="sec-title">12 題項（橘條 = 本師平均；直線 = 全體教師平均）</div>
+    ${cmp}
+    <div class="sec-title">填答者職級</div>
+    <div class="chips">${rankCnt.map(([r,c])=>`<span class="chip" style="cursor:default">${r}・${c} 份</span>`).join("")}</div>
+    <div class="sec-title">學員回饋（${cs.length} 則）</div>
+    ${cs.length?`<div class="comments">${cs.map(c=>`<div class="cmt"><div class="cmt-text">${esc(c.comment)}</div><div class="cmt-meta">${esc(c.rank)}・${esc(c.time.slice(0,10))}</div></div>`).join("")}</div>`:`<div class="empty">尚無文字回饋</div>`}
+    `:`<div class="empty">此教師尚無問卷回覆</div>`}`;
+  $("detailModal").classList.add("show");
+}
+
+function bindTable(){
+  const sr = $("search");
+  if(sr) sr.addEventListener("input",e=>{
+    state.q=e.target.value.trim();
+    const pos=e.target.selectionStart;
+    render(); const n=$("search"); n.focus(); n.setSelectionRange(pos,pos);
+  });
+}
+$("app").addEventListener("click",e=>{
+  const c=e.target.closest(".chip[data-grp]");
+  if(c){ state[c.dataset.grp]=c.dataset.val; render(); return; }
+  const th=e.target.closest("th[data-sort]");
+  if(th){ const k=th.dataset.sort; if(state.sortKey===k) state.sortDir*=-1; else {state.sortKey=k; state.sortDir=(k==="name"||k==="year")?1:-1;} render(); return; }
+  const tr=e.target.closest("tr[data-teacher]");
+  if(tr) openDetail(tr.dataset.teacher);
+});
+
+/* ===================== 管理者 ===================== */
+function setToken(t){
+  token=t;
+  try{ t?sessionStorage.setItem("tes_token",t):sessionStorage.removeItem("tes_token"); }catch(e){}
+  renderTop();
+  if(!t) $("adminPanel").classList.remove("show");
+}
+function renderTop(){
+  $("topActions").innerHTML = token
+    ? `<span class="admin-badge">管理者</span><button class="btn sm" id="openAdmin" type="button">管理教師名單</button><button class="btn ghost sm" id="logoutBtn" type="button">登出</button>`
+    : `<button class="btn" id="openLogin" type="button">管理者登入</button>`;
+}
+$("topActions").addEventListener("click",e=>{
+  if(e.target.id==="openLogin"){ $("loginErr").textContent=""; $("pwd").value=""; $("loginModal").classList.add("show"); setTimeout(()=>$("pwd").focus(),50); }
+  if(e.target.id==="openAdmin"){ $("adminPanel").classList.add("show"); renderAdmin(); $("adminPanel").scrollIntoView({behavior:"smooth"}); }
+  if(e.target.id==="logoutBtn"){ setToken(null); toast("已登出"); }
+});
+$("closeAdmin").addEventListener("click",()=>$("adminPanel").classList.remove("show"));
+
+$("loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const btn=$("loginBtn"); btn.disabled=true; btn.textContent="驗證中…"; $("loginErr").textContent="";
+  try{
+    const d = await apiPost({action:"login",password:$("pwd").value});
+    setToken(d.token);
+    $("loginModal").classList.remove("show");
+    $("adminPanel").classList.add("show"); renderAdmin();
+    toast("登入成功");
+  }catch(err){ $("loginErr").textContent=err.message; }
+  finally{ btn.disabled=false; btn.textContent="登入"; }
+});
+
+function renderAdmin(){
+  if(!$("newYear").value) $("newYear").value = CUR_ROC;
+  const ys = [...new Set(TEACHERS.map(t=>t.year||"未填"))].sort((a,b)=>(+b||0)-(+a||0));
+  if(state.adminYear!=="all" && !ys.includes(state.adminYear)) state.adminYear="all";
+  $("adminYearChips").innerHTML = [["all","全部 "+TEACHERS.length]].concat(ys.map(y=>[y,yearLabel(y)+" "+TEACHERS.filter(t=>(t.year||"未填")===y).length]))
+    .map(([v,l])=>`<button type="button" class="chip${state.adminYear===v?" on":""}" data-ay="${esc(v)}">${esc(l)}</button>`).join("");
+  const list = TEACHERS.filter(t=>state.adminYear==="all"||(t.year||"未填")===state.adminYear)
+    .slice().sort((a,b)=>(+b.year||0)-(+a.year||0) || a.name.localeCompare(b.name,"zh-Hant"));
+  $("adminTbody").innerHTML = list.length ? list.map(t=>{
+    const n = RESPONSES.filter(r=>r.teacher===t.name).length;
+    return `<tr class="${t.visible?"":"hidden-row"}" data-name="${esc(t.name)}">
+      <td class="name">${esc(t.name)}</td>
+      <td><input class="year-inp" value="${esc(t.year)}" maxlength="3" inputmode="numeric" data-act="year" aria-label="完訓年度"></td>
+      <td class="r score">${n}</td>
+      <td><span class="toggle"><button type="button" class="${t.visible?"on":""}" data-act="show">顯示</button><button type="button" class="${t.visible?"":"on"}" data-act="hide">隱藏</button></span></td>
+      <td>${esc(t.note)||"—"}</td>
+      <td class="r"><button type="button" class="btn ghost sm" data-act="del">刪除</button></td>
+    </tr>`;}).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--muted)">名單尚無教師，請由上方新增</td></tr>`;
+}
+$("adminYearChips").addEventListener("click",e=>{const c=e.target.closest("[data-ay]"); if(c){state.adminYear=c.dataset.ay; renderAdmin();}});
+
+async function adminAction(body, okMsg){
+  if(!token){ toast("請先登入"); return; }
+  try{
+    const d = await apiPost(Object.assign({token},body));
+    TEACHERS = d.teachers; render(); renderAdmin(); toast(okMsg);
+  }catch(err){ toast(err.message); }
+}
+$("addForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const name=$("newName").value.trim(), year=$("newYear").value.trim();
+  if(!name){ toast("請輸入教師姓名"); $("newName").focus(); return; }
+  if(!/^\d{2,3}$/.test(year)){ toast("完訓年度請填民國年，例如 "+CUR_ROC); $("newYear").focus(); return; }
+  const btn=$("addBtn"); btn.disabled=true;
+  await adminAction({action:"addTeacher",name,year,note:$("newNote").value.trim()}, "已新增 "+name);
+  btn.disabled=false; $("newName").value=""; $("newNote").value=""; $("newName").focus();
+});
+$("adminTbody").addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]"); if(!b||b.tagName==="INPUT") return;
+  const name=b.closest("tr").dataset.name, act=b.dataset.act;
+  if(act==="show") adminAction({action:"updateTeacher",name,visible:true},name+" 已顯示於問卷");
+  if(act==="hide") adminAction({action:"updateTeacher",name,visible:false},name+" 已自問卷隱藏");
+  if(act==="del"){
+    if(b.dataset.confirm){ adminAction({action:"deleteTeacher",name},"已刪除 "+name+"（評估資料保留）"); }
+    else { b.dataset.confirm="1"; b.textContent="確定刪除？"; b.classList.remove("ghost"); setTimeout(()=>{ if(b.isConnected){ delete b.dataset.confirm; b.textContent="刪除"; b.classList.add("ghost"); } },3000); }
+  }
+});
+$("adminTbody").addEventListener("change",e=>{
+  const i=e.target.closest("input[data-act=year]"); if(!i) return;
+  const name=i.closest("tr").dataset.name, v=i.value.trim();
+  if(!/^\d{2,3}$/.test(v)){ toast("完訓年度請填民國年"); renderAdmin(); return; }
+  adminAction({action:"updateTeacher",name,year:v}, name+" 改為 "+v+" 年度");
+});
+
+/* Modal 關閉 */
+document.querySelectorAll(".modal").forEach(m=>m.addEventListener("click",e=>{ if(e.target===m||e.target.closest("[data-close]")) m.classList.remove("show"); }));
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") document.querySelectorAll(".modal.show").forEach(m=>m.classList.remove("show")); });
+$("refreshBtn").addEventListener("click",load);
+
+/* ===================== 示範資料（?demo） ===================== */
+function demoData(){
+  if(demoData.cache) return demoData.cache;
+  const items=["醫學知識說明","有組織的教學方式","運用臨床實例輔助說明","條理分明的引導學員","善運用比喻等教學技巧","整體教學時間控制","誘導學員參與討論","教學互動(教師與學員)","鼓勵學員有問題即時提出","明確指出學員值得肯定之處","具體解釋學員不當表現之處","了解學員問題與解決"];
+  const teachers=[["示範教師甲","113"],["示範教師乙","113"],["示範教師丙","114"],["示範教師丁","114"],["示範教師戊","114"],["示範教師己","115"],["示範教師庚","115"],["示範教師辛","115"]]
+    .map(([name,year],i)=>({name,year,visible:i!==1,note:""}));
+  let seed=7; const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const responses=[]; const cm=["老師很有耐心，謝謝老師","講解清楚，臨床例子很實用","希望可以多一點時間討論","老師很認真教學～人也超好！！"];
+  for(let i=0;i<70;i++){
+    const t=teachers[Math.floor(rnd()*7)]; const base={"113":8.6,"114":9.0,"115":9.4}[t.year]-(t.name.endsWith("戊")?1.4:0);
+    const scores=items.map((_,k)=>Math.max(4,Math.min(10,Math.round(base+(rnd()-.5)*2.4-(k>=9?.3:0)))));
+    responses.push({id:i+1,time:`2026-${String(1+Math.floor(rnd()*9)).padStart(2,"0")}-${String(1+Math.floor(rnd()*27)).padStart(2,"0")} 10:00`,rank:RANKS[Math.floor(rnd()*4)],teacher:t.name,scores,comment:rnd()<.25?cm[Math.floor(rnd()*4)]:""});
+  }
+  return demoData.cache={ok:true,items,teachers,responses};
+}
+function demoPost(b){
+  const d=demoData();
+  if(b.action==="login") return {ok:true,token:"demo"};
+  if(b.action==="addTeacher"){ if(d.teachers.some(t=>t.name===b.name)) throw new Error("「"+b.name+"」已在名單中"); d.teachers.push({name:b.name,year:b.year,visible:true,note:b.note||""}); }
+  if(b.action==="updateTeacher"){ const t=d.teachers.find(t=>t.name===b.name); if("visible" in b) t.visible=b.visible; if("year" in b) t.year=b.year; }
+  if(b.action==="deleteTeacher"){ d.teachers=d.teachers.filter(t=>t.name!==b.name); }
+  return {ok:true,teachers:d.teachers};
+}
+
+renderTop();
+if(token) $("adminPanel").classList.add("show");
+load();
+</script>
+</body>
+</html>
