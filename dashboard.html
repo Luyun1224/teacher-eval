@@ -767,7 +767,7 @@ function commentsHTML(rows){
       <div class="card-head"><div class="card-no">04</div><h2>學員建議及回饋<small>共 ${cs.length} 則</small></h2></div>
       ${cs.length ? `<div class="comments">${cs.map(c=>`
         <div class="cmt"><div class="cmt-text">${esc(c.comment)}</div>
-        <div class="cmt-meta">${esc(c.teacher)} 老師・${esc(c.rank)}・${esc(c.time.slice(0,10))}</div></div>`).join("")}</div>`
+        <div class="cmt-meta">${esc(c.teacher)} 老師・${esc(c.rank)}</div></div>`).join("")}</div>`
       : `<div class="empty">此篩選條件下沒有文字回饋</div>`}
     </section>`;
 }
@@ -802,7 +802,7 @@ function openDetail(name){
     <div class="sec-title">填答者職級</div>
     <div class="chips">${rankCnt.map(([r,c])=>`<span class="chip" style="cursor:default">${r}・${c} 份</span>`).join("")}</div>
     <div class="sec-title">學員回饋（${cs.length} 則）</div>
-    ${cs.length?`<div class="comments">${cs.map(c=>`<div class="cmt"><div class="cmt-text">${esc(c.comment)}</div><div class="cmt-meta">${esc(c.rank)}・${esc(c.time.slice(0,10))}</div></div>`).join("")}</div>`:`<div class="empty">尚無文字回饋</div>`}
+    ${cs.length?`<div class="comments">${cs.map(c=>`<div class="cmt"><div class="cmt-text">${esc(c.comment)}</div><div class="cmt-meta">${esc(c.rank)}</div></div>`).join("")}</div>`:`<div class="empty">尚無文字回饋</div>`}
     `:`<div class="empty">此教師尚無問卷回覆</div>`}`;
   $("detailModal").classList.add("show");
 }
