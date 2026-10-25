@@ -562,7 +562,7 @@ const CONCERN_ITEM = 6;  // 或任一題平均 ≤ 6 分
 function median(a){ if(!a.length) return NaN; const b=[...a].sort((x,y)=>x-y), m=b.length>>1; return b.length%2?b[m]:(b[m-1]+b[m])/2; }
 
 function cohortData(){
-  const rows = rowsFiltered(false);
+  const rows = rowsFiltered();
   const ys = yearsAll().filter(y=>rows.some(r=>yearOf(r.teacher)===y));
   return ys.map(y=>{
     const rs = rows.filter(r=>yearOf(r.teacher)===y);
@@ -645,7 +645,7 @@ function yearCompareHTML(){
 
   return `
     <section class="card">
-      <div class="card-head"><div class="card-no">01</div><h2>各年度完訓教師表現概況<small>各年度為不同教師群組，僅供對照，不代表進步幅度；套用職級篩選</small></h2></div>
+      <div class="card-head"><div class="card-no">01</div><h2>${state.year==="all"?"各年度完訓教師表現概況":esc(yearLabel(state.year))+"完訓教師表現概況"}<small>${state.year==="all"?"各年度為不同教師群組，僅供對照，不代表進步幅度；套用年度與職級篩選":"僅顯示所選年度；套用職級篩選"}</small></h2></div>
       <div class="year-cards">${cards}</div>
 
       <div class="sub-title">教師個別表現分佈<span>每個點代表一位教師的平均分數，點選可看明細</span></div>
@@ -858,7 +858,9 @@ $("loginForm").addEventListener("submit",async e=>{
   finally{ btn.disabled=false; btn.textContent="登入"; }
 });
 
+const pendingVisibility = new Map();
 function renderAdmin(){
+  TEACHERS.forEach(t=>{ if(pendingVisibility.has(t.name)) t.visible=pendingVisibility.get(t.name); });
   if(!$("newYear").value) $("newYear").value = CUR_ROC;
   const ys = [...new Set(TEACHERS.map(t=>t.year||"未填"))].sort((a,b)=>(+b||0)-(+a||0));
   if(state.adminYear!=="all" && !ys.includes(state.adminYear)) state.adminYear="all";
@@ -868,13 +870,14 @@ function renderAdmin(){
     .slice().sort((a,b)=>(+b.year||0)-(+a.year||0) || a.name.localeCompare(b.name,"zh-Hant"));
   $("adminTbody").innerHTML = list.length ? list.map(t=>{
     const n = RESPONSES.filter(r=>r.teacher===t.name).length;
-    return `<tr class="${t.visible?"":"hidden-row"}" data-name="${esc(t.name)}">
+    const pending = pendingVisibility.has(t.name), disabled = pending ? " disabled" : "";
+    return `<tr class="${t.visible?"":"hidden-row"}" data-name="${esc(t.name)}" aria-busy="${pending}">
       <td class="name">${esc(t.name)}</td>
-      <td><input class="year-inp" value="${esc(t.year)}" maxlength="3" inputmode="numeric" data-act="year" aria-label="完訓年度"></td>
+      <td><input class="year-inp" value="${esc(t.year)}" maxlength="3" inputmode="numeric" data-act="year" aria-label="完訓年度"${disabled}></td>
       <td class="r score">${n}</td>
-      <td><span class="toggle"><button type="button" class="${t.visible?"on":""}" data-act="show">顯示</button><button type="button" class="${t.visible?"":"on"}" data-act="hide">隱藏</button></span></td>
+      <td><span class="toggle"><button type="button" class="${t.visible?"on":""}" data-act="show" aria-pressed="${!!t.visible}"${disabled}>顯示</button><button type="button" class="${t.visible?"":"on"}" data-act="hide" aria-pressed="${!t.visible}"${disabled}>隱藏</button></span>${pending?'<small role="status"> 儲存中…</small>':""}</td>
       <td>${esc(t.note)||"—"}</td>
-      <td class="r"><button type="button" class="btn ghost sm" data-act="del">刪除</button></td>
+      <td class="r"><button type="button" class="btn ghost sm" data-act="del"${disabled}>刪除</button></td>
     </tr>`;}).join("") : `<tr><td colspan="6" style="text-align:center;color:var(--muted)">名單尚無教師，請由上方新增</td></tr>`;
 }
 $("adminYearChips").addEventListener("click",e=>{const c=e.target.closest("[data-ay]"); if(c){state.adminYear=c.dataset.ay; renderAdmin();}});
@@ -885,6 +888,26 @@ async function adminAction(body, okMsg){
     const d = await apiPost(Object.assign({token},body));
     TEACHERS = d.teachers; render(); renderAdmin(); toast(okMsg);
   }catch(err){ toast(err.message); }
+}
+async function setTeacherVisibility(name, visible){
+  if(!token){ toast("請先登入"); return; }
+  const teacher = TEACHERS.find(t=>t.name===name);
+  if(!teacher || pendingVisibility.has(name) || teacher.visible===visible) return;
+  const previous = teacher.visible;
+  pendingVisibility.set(name, visible);
+  teacher.visible = visible;
+  renderAdmin();
+  try{
+    await apiPost({action:"updateTeacher",token,name,visible});
+    toast(name+(visible?" 已顯示於問卷":" 已自問卷隱藏"));
+  }catch(err){
+    const current = TEACHERS.find(t=>t.name===name);
+    if(current) current.visible=previous;
+    toast("儲存失敗，已還原："+err.message);
+  }finally{
+    pendingVisibility.delete(name);
+    renderAdmin();
+  }
 }
 $("addForm").addEventListener("submit",async e=>{
   e.preventDefault();
@@ -898,8 +921,8 @@ $("addForm").addEventListener("submit",async e=>{
 $("adminTbody").addEventListener("click",e=>{
   const b=e.target.closest("[data-act]"); if(!b||b.tagName==="INPUT") return;
   const name=b.closest("tr").dataset.name, act=b.dataset.act;
-  if(act==="show") adminAction({action:"updateTeacher",name,visible:true},name+" 已顯示於問卷");
-  if(act==="hide") adminAction({action:"updateTeacher",name,visible:false},name+" 已自問卷隱藏");
+  if(act==="show") setTeacherVisibility(name,true);
+  if(act==="hide") setTeacherVisibility(name,false);
   if(act==="del"){
     if(b.dataset.confirm){ adminAction({action:"deleteTeacher",name},"已刪除 "+name+"（評估資料保留）"); }
     else { b.dataset.confirm="1"; b.textContent="確定刪除？"; b.classList.remove("ghost"); setTimeout(()=>{ if(b.isConnected){ delete b.dataset.confirm; b.textContent="刪除"; b.classList.add("ghost"); } },3000); }
